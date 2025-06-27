@@ -3,20 +3,20 @@ package rsvp
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 )
 
 type Response struct {
-	HtmlTemplate *template.Template
-	Data         any
-	SeeOther     string
-	Status       int
+	Data     any
+	Template string
+	SeeOther string
+	Status   int
 }
 
-func (res *Response) Write(w http.ResponseWriter, r *http.Request) error {
+func (res *Response) Write(w http.ResponseWriter, r *http.Request, t *template.Template) error {
 	if res.SeeOther != "" {
 		http.Redirect(w, r, res.SeeOther, http.StatusSeeOther)
 		return nil
@@ -29,17 +29,26 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(res.Status)
 	}
 
+	// I'm too dumb to get my head around the accept header's weighting feature. So I just pick the first match, for now
 	switch {
 	case strings.Contains(accept, "text/html"):
-		if res.HtmlTemplate == nil {
+		if t == nil {
 			err := json.NewEncoder(bodyBytes).Encode(res.Data)
 			if err != nil {
 				return err
 			}
 		} else {
-			err := res.HtmlTemplate.Execute(bodyBytes, res.Data)
-			if err != nil {
-				return err
+			subTemplate := t.Lookup(res.Template)
+			if subTemplate == nil {
+				err := t.Execute(bodyBytes, res.Data)
+				if err != nil {
+					return err
+				}
+			} else {
+				err := subTemplate.Execute(bodyBytes, res.Data)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	case strings.Contains(accept, "application/json"):
@@ -56,16 +65,21 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request) error {
 
 	_, err := w.Write(bodyBytes.Bytes())
 	if err != nil {
-		log.Printf("Failed to write rsvp.Response to HTTP: %s\n", err)
+		return fmt.Errorf("Failed to write rsvp.Response bodyBytes to http.ResponseWriter: %s", err)
 	}
 	return nil
 }
 
-func Data(htmlTemplate *template.Template, data any) Response {
-	return Response{
-		HtmlTemplate: htmlTemplate,
-		Data:         data,
+// Write data as a response body to whatever supported format is requested in the Accept header
+// Optionally provide a template name for this response
+func Data(data any, template ...string) Response {
+	res := Response{
+		Data: data,
 	}
+	if len(template) > 0 {
+		res.Template = template[0]
+	}
+	return res
 }
 
 func SeeOther(url string) Response {

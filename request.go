@@ -1,7 +1,6 @@
 package rsvp
 
 import (
-	"log"
 	"net/http"
 	"net/url"
 )
@@ -16,12 +15,9 @@ func wrapStdRequest(r *http.Request) Request {
 	}
 }
 
-func (r *Request) ParseForm() url.Values {
+func (r *Request) ParseForm() (url.Values, error) {
 	err := r.inner.ParseForm()
-	if err != nil {
-		log.Printf("Failed to parse form: %s\n", err)
-	}
-	return r.inner.Form
+	return r.inner.Form, err
 }
 
 func (r *Request) PathValue(name string) string {

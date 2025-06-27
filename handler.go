@@ -1,17 +1,20 @@
 package rsvp
 
 import (
-	"log"
+	"fmt"
+	"html/template"
 	"net/http"
 )
 
 type ServeMux struct {
-	inner *http.ServeMux
+	inner        *http.ServeMux
+	HtmlTemplate *template.Template
 }
 
 func NewServeMux() *ServeMux {
 	return &ServeMux{
 		http.NewServeMux(),
+		nil,
 	}
 }
 
@@ -31,10 +34,9 @@ func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc) {
 
 		response := handler(w.Header(), &r)
 
-		err := response.Write(w, stdReq)
+		err := response.Write(w, stdReq, m.HtmlTemplate)
 		if err != nil {
-			log.Printf("Failed to write rsvp.Response to bytes: %s\n", err)
-			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+			panic(fmt.Sprintf("Failed to write rsvp.Response: %s", err))
 		}
 	})
 }
