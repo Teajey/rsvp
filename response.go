@@ -3,7 +3,6 @@ package rsvp
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -14,34 +13,12 @@ type Response struct {
 	HtmlTemplate *template.Template
 	Data         any
 	SeeOther     string
-	Session      *Session
 	Status       int
-	LogMessage   string
 }
 
 func (res *Response) Write(w http.ResponseWriter, r *http.Request) error {
-	if res.LogMessage != "" {
-		log.Printf("%s --- %s\n", res.Data, res.LogMessage)
-	}
-
-	if res.Session != nil {
-		err := res.Session.inner.Save(r, w)
-		if err != nil {
-			return fmt.Errorf("Failed to write session: %w", err)
-		}
-	}
-
 	if res.SeeOther != "" {
 		http.Redirect(w, r, res.SeeOther, http.StatusSeeOther)
-		if res.Session != nil {
-			flash := res.Session.FlashPeek()
-			if flash != nil {
-				err := json.NewEncoder(w).Encode(flash)
-				if err != nil {
-					return err
-				}
-			}
-		}
 		return nil
 	}
 
@@ -89,21 +66,6 @@ func Data(htmlTemplate *template.Template, data any) Response {
 		HtmlTemplate: htmlTemplate,
 		Data:         data,
 	}
-}
-
-func (r Response) Log(format string, a ...any) Response {
-	r.LogMessage = fmt.Sprintf(format, a...)
-	return r
-}
-
-func (r Response) LogError(err error) Response {
-	r.LogMessage = fmt.Sprintf("%s", err)
-	return r
-}
-
-func (r Response) SaveSession(s Session) Response {
-	r.Session = &s
-	return r
 }
 
 func SeeOther(url string) Response {
