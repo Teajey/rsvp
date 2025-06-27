@@ -6,4 +6,11 @@ It's easy for me to lose track of what I've written to [`http.ResponseWriter`](h
 ```
 http: multiple response.WriteHeader calls
 ```
-Instead, I just to return a value to trigger the HTTP response write.
+With this library I just return a value to trigger the HTTP response write.
+
+## Features
+ - Respects the Accept header and will attempt to provide the data in a format that is requested.
+   - [x] JSON (default)
+   - [x] HTML
+   - [ ] Plain text
+   - [ ] Other?
