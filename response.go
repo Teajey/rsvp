@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"io"
 	"net/http"
 	"strings"
 )
@@ -60,8 +59,8 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, t *template.T
 		}
 	default:
 		switch data := res.Body.(type) {
-		case io.Reader:
-			_, err := bodyBytes.ReadFrom(data)
+		case string:
+			_, err := bodyBytes.WriteString(data)
 			if err != nil {
 				return err
 			}
