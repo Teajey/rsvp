@@ -3,14 +3,16 @@ package rsvp
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
 	"strings"
 )
 
 type Response struct {
-	Data     any
+	Body     any
 	Template string
 	SeeOther string
 	Status   int
@@ -33,33 +35,38 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, t *template.T
 	switch {
 	case strings.Contains(accept, "text/html"):
 		if t == nil {
-			err := json.NewEncoder(bodyBytes).Encode(res.Data)
+			err := json.NewEncoder(bodyBytes).Encode(res.Body)
 			if err != nil {
 				return err
 			}
 		} else {
 			subTemplate := t.Lookup(res.Template)
 			if subTemplate == nil {
-				err := t.Execute(bodyBytes, res.Data)
+				err := t.Execute(bodyBytes, res.Body)
 				if err != nil {
 					return err
 				}
 			} else {
-				err := subTemplate.Execute(bodyBytes, res.Data)
+				err := subTemplate.Execute(bodyBytes, res.Body)
 				if err != nil {
 					return err
 				}
 			}
 		}
 	case strings.Contains(accept, "application/json"):
-		err := json.NewEncoder(bodyBytes).Encode(res.Data)
+		err := json.NewEncoder(bodyBytes).Encode(res.Body)
 		if err != nil {
 			return err
 		}
 	default:
-		err := json.NewEncoder(bodyBytes).Encode(res.Data)
-		if err != nil {
-			return err
+		switch data := res.Body.(type) {
+		case io.Reader:
+			_, err := bodyBytes.ReadFrom(data)
+			if err != nil {
+				return err
+			}
+		default:
+			return errors.New("Unsupported response body type")
 		}
 	}
 
@@ -72,9 +79,9 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, t *template.T
 
 // Write data as a response body to whatever supported format is requested in the Accept header
 // Optionally provide a template name for this response
-func Data(data any, template ...string) Response {
+func Body(data any, template ...string) Response {
 	res := Response{
-		Data: data,
+		Body: data,
 	}
 	if len(template) > 0 {
 		res.Template = template[0]
