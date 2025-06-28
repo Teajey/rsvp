@@ -10,7 +10,7 @@ Having to remember to return separately from resolving the response? \*wretch*
 
 ```go
 if r.Method != http.MethodPut {
-	http.Error(w, "", http.StatusNotFound)
+	http.Error(w, "Use PUT", http.StatusNotFound)
 	return
 }
 ```
@@ -30,6 +30,16 @@ type Handler interface {
 	ServeHTTP(h http.Header, r *http.Request) Response
 }
 ```
+
+Not with RSVP 🫠
+
+```go
+if r.Method != http.MethodPut {
+	return rsvp.Response{Status: http.StatusMethodNotAllowed, Body: "Use Put"}
+}
+```
+
+(Wrapping this with your own convenience method, i.e. `func ErrorMethodNotAllowed(message string) rsvp.Response` is encouraged. You get to decide for yourself how errors are represented)
 
 ## Features
  - Respects the Accept header and will attempt to provide the data in a format that is requested.
