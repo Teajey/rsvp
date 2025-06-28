@@ -1,78 +1,100 @@
 package rsvp
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"html/template"
+	html "html/template"
+	"iter"
 	"net/http"
-	"strings"
+	"slices"
+	text "text/template"
+
+	"github.com/Teajey/rsvp/content"
 )
 
 type Response struct {
-	Body     any
-	Template string
-	SeeOther string
-	Status   int
+	Body         any
+	TemplateName string
+	SeeOther     string
+	Status       int
 }
 
-func (res *Response) Write(w http.ResponseWriter, r *http.Request, t *template.Template) error {
+func (res *Response) MediaTypes(html *html.Template, text *text.Template) iter.Seq[supportedType] {
+	return func(yield func(supportedType) bool) {
+		switch res.Body.(type) {
+		case string:
+			yield(mPlaintext)
+			return
+		case []byte:
+			yield(mBytes)
+			return
+		}
+
+		if text != nil && text.Lookup(res.TemplateName) != nil {
+			if !yield(mPlaintext) {
+				return
+			}
+		}
+
+		if html != nil && html.Lookup(res.TemplateName) != nil {
+			if !yield(mHtml) {
+				return
+			}
+		}
+
+		if !yield(mJson) {
+			return
+		}
+	}
+}
+
+func (res *Response) Write(w http.ResponseWriter, r *http.Request, h *html.Template, t *text.Template) error {
 	if res.SeeOther != "" {
 		http.Redirect(w, r, res.SeeOther, http.StatusSeeOther)
 		return nil
 	}
 
-	bodyBytes := bytes.NewBuffer([]byte{})
 	accept := r.Header.Get("Accept")
 
 	if res.Status != 0 {
 		w.WriteHeader(res.Status)
 	}
 
-	// I'm too dumb to get my head around the accept header's weighting feature. So I just pick the first match, for now
-	switch {
-	case strings.Contains(accept, "text/html"):
-		if t == nil {
-			err := json.NewEncoder(bodyBytes).Encode(res.Body)
+	supported := slices.Collect(res.MediaTypes(h, t))
+	mediaType := resolveMediaType(r.URL, supported, content.ParseAccept(accept))
+
+	switch mediaType {
+	case string(mHtml):
+		err := h.ExecuteTemplate(w, res.TemplateName, res.Body)
+		if err != nil {
+			return err
+		}
+	case string(mPlaintext):
+		if body, ok := res.Body.(string); ok {
+			_, err := w.Write([]byte(body))
 			if err != nil {
 				return err
 			}
 		} else {
-			subTemplate := t.Lookup(res.Template)
-			if subTemplate == nil {
-				err := t.Execute(bodyBytes, res.Body)
-				if err != nil {
-					return err
-				}
-			} else {
-				err := subTemplate.Execute(bodyBytes, res.Body)
-				if err != nil {
-					return err
-				}
+			err := t.ExecuteTemplate(w, res.TemplateName, res.Body)
+			if err != nil {
+				return err
 			}
 		}
-	case strings.Contains(accept, "application/json"):
-		err := json.NewEncoder(bodyBytes).Encode(res.Body)
+	case string(mJson):
+		err := json.NewEncoder(w).Encode(res.Body)
+		if err != nil {
+			return err
+		}
+	case string(mBytes):
+		w.Header().Set("Content-Type", string(mBytes))
+		_, err := w.Write(res.Body.([]byte))
 		if err != nil {
 			return err
 		}
 	default:
-		switch data := res.Body.(type) {
-		case string:
-			_, err := bodyBytes.WriteString(data)
-			if err != nil {
-				return err
-			}
-		default:
-			return errors.New("Unsupported response body type")
-		}
+		w.WriteHeader(http.StatusUnsupportedMediaType)
 	}
 
-	_, err := w.Write(bodyBytes.Bytes())
-	if err != nil {
-		return fmt.Errorf("Failed to write rsvp.Response bodyBytes to http.ResponseWriter: %s", err)
-	}
 	return nil
 }
 
@@ -83,7 +105,7 @@ func Body(data any, template ...string) Response {
 		Body: data,
 	}
 	if len(template) > 0 {
-		res.Template = template[0]
+		res.TemplateName = template[0]
 	}
 	return res
 }

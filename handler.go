@@ -2,19 +2,20 @@ package rsvp
 
 import (
 	"fmt"
-	"html/template"
+	html "html/template"
 	"net/http"
+	text "text/template"
 )
 
 type ServeMux struct {
 	inner        *http.ServeMux
-	HtmlTemplate *template.Template
+	HtmlTemplate *html.Template
+	TextTemplate *text.Template
 }
 
 func NewServeMux() *ServeMux {
 	return &ServeMux{
-		http.NewServeMux(),
-		nil,
+		inner: http.NewServeMux(),
 	}
 }
 
@@ -34,7 +35,7 @@ func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc) {
 
 		response := handler(w.Header(), &r)
 
-		err := response.Write(w, stdReq, m.HtmlTemplate)
+		err := response.Write(w, stdReq, m.HtmlTemplate, m.TextTemplate)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to write rsvp.Response: %s", err))
 		}

@@ -32,8 +32,16 @@ func parseAcceptUnsorted(accept string) iter.Seq[proposal] {
 
 // Returns mediatypes in the order specified by https://httpwg.org/specs/rfc9110.html#field.accept starting with highest precedence.
 //
+// An empty string will yield a single "*/*".
+//
 // Invalid proposals are dropped.
 func ParseAccept(accept string) iter.Seq[string] {
+	if accept == "" {
+		return func(yield func(string) bool) {
+			yield("*/*")
+		}
+	}
+
 	list := slices.Collect(parseAcceptUnsorted(accept))
 	slices.SortFunc(list, proposalCmp)
 
