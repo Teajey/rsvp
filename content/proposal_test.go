@@ -69,12 +69,9 @@ func TestParseProposalWild(t *testing.T) {
 	assert.Eq(t, "Weight value", *proposal.Weight, 0.8)
 }
 
-// This isn't supposed to be valid
 func TestParseProposalWildSuper(t *testing.T) {
-	proposal, err := content.ParseProposal("*/html;q=0.8")
-	assert.FatalErr(t, "Parsing proposal", err)
-	assert.Eq(t, "MediaType value", proposal.MediaType(), "*/html")
-	assert.Eq(t, "Weight value", *proposal.Weight, 0.8)
+	_, err := content.ParseProposal("*/html;q=0.8")
+	assert.FatalErrIs(t, "Parsing proposal", err, content.ErrorProposalWildSuper)
 }
 
 func TestParseProposalWildSub(t *testing.T) {

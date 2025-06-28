@@ -2,6 +2,7 @@ package assert
 
 import (
 	"errors"
+	"slices"
 	"testing"
 )
 
@@ -38,5 +39,11 @@ func FatalErrIs(t *testing.T, context string, err, target error) {
 func FatalErrAs(t *testing.T, context string, err error, target any) {
 	if !errors.As(err, target) {
 		t.Fatalf("%s: encountered unexpected error: %s", context, err)
+	}
+}
+
+func SlicesEq[S ~[]E, E comparable](t *testing.T, context string, expected, actual S) {
+	if !slices.Equal(expected, actual) {
+		t.Errorf("%s: %v != %v", context, expected, actual)
 	}
 }
