@@ -3,8 +3,8 @@ package content_test
 import (
 	"testing"
 
-	"github.com/Teajey/rsvp/content"
 	"github.com/Teajey/rsvp/internal/assert"
+	"github.com/Teajey/rsvp/internal/content"
 )
 
 func TestParseProposalHtml(t *testing.T) {

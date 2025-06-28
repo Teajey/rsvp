@@ -8,7 +8,7 @@ import (
 	"slices"
 	text "text/template"
 
-	"github.com/Teajey/rsvp/content"
+	"github.com/Teajey/rsvp/internal/content"
 )
 
 type Response struct {

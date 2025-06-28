@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Teajey/rsvp"
+	"github.com/Teajey/rsvp/internal/assert"
 )
 
 func TestStringBody(t *testing.T) {

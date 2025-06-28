@@ -6,8 +6,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/Teajey/rsvp/content"
 	"github.com/Teajey/rsvp/internal/assert"
+	"github.com/Teajey/rsvp/internal/content"
 )
 
 func TestParseAccept(t *testing.T) {
