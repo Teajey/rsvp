@@ -63,14 +63,6 @@ var ErrorProposalEmptySuper = errors.New("Empty media supertype, i.e. <supertype
 var ErrorProposalEmptySub = errors.New("Empty media subtype, i.e. <supertype>/<subtype>")
 var ErrorProposalWildSuper = errors.New("Supertype may not be wild on it's own, i.e. */<subtype>")
 
-type ErrorProposalBadWeightPrefix struct {
-	Weighting string
-}
-
-func (e ErrorProposalBadWeightPrefix) Error() string {
-	return fmt.Sprintf("Invalid weighting '%s'. Expected 'q=' followed by a number ranging from 0 to 1", e.Weighting)
-}
-
 type ErrorProposalBadWeightFloat struct {
 	Err error
 }

@@ -44,10 +44,10 @@ func TestParseProposalEmptySub(t *testing.T) {
 }
 
 func TestParseProposalBadWeightPrefix(t *testing.T) {
-	_, err := content.ParseProposal("text/html;w=0.8")
-	var badWeightPrefix content.ErrorProposalBadWeightPrefix
-	assert.FatalErrAs(t, "Parsing proposal", err, &badWeightPrefix)
-	assert.Eq(t, "Error value", badWeightPrefix.Weighting, "w=0.8")
+	proposal, err := content.ParseProposal("text/html;w=0.8")
+	assert.FatalErr(t, "Parsing proposal", err)
+	assert.Eq(t, "MediaType value", proposal.MediaType(), "text/html")
+	assert.Eq(t, "Weight value", proposal.Weight, nil)
 }
 
 func TestParseProposalBadWeightFloat(t *testing.T) {
