@@ -69,13 +69,13 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, h *html.Templ
 			return err
 		}
 	case string(mPlaintext):
-		if body, ok := res.Body.(string); ok {
-			_, err := w.Write([]byte(body))
+		if tm := t.Lookup(res.TemplateName); tm != nil {
+			err := tm.ExecuteTemplate(w, res.TemplateName, res.Body)
 			if err != nil {
 				return err
 			}
 		} else {
-			err := t.ExecuteTemplate(w, res.TemplateName, res.Body)
+			_, err := w.Write([]byte(res.Body.(string)))
 			if err != nil {
 				return err
 			}
