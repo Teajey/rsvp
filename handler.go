@@ -24,18 +24,16 @@ func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type Handler interface {
-	ServeHTTP(h http.Header, r *Request) Response
+	ServeHTTP(h http.Header, r *http.Request) Response
 }
 
-type HandlerFunc func(h http.Header, r *Request) Response
+type HandlerFunc func(h http.Header, r *http.Request) Response
 
 func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc) {
-	m.inner.HandleFunc(pattern, func(w http.ResponseWriter, stdReq *http.Request) {
-		r := wrapStdRequest(stdReq)
+	m.inner.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		response := handler(w.Header(), r)
 
-		response := handler(w.Header(), &r)
-
-		err := response.Write(w, stdReq, m.HtmlTemplate, m.TextTemplate)
+		err := response.Write(w, r, m.HtmlTemplate, m.TextTemplate)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to write rsvp.Response: %s", err))
 		}
