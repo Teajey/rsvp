@@ -6,6 +6,15 @@ It's easy for me to lose track of what I've written to [`http.ResponseWriter`](h
 
 With this library I just return a value, and I can only ever do it once, to execute an HTTP response write. Why write responses with a weird mutable reference from goodness knows where? YEUCH!
 
+Having to remember to return separately from resolving the response? \*wretch*
+
+```go
+if r.Method != http.MethodPut {
+	http.Error(w, "", http.StatusNotFound)
+	return
+}
+```
+
 The default `net/http` interface:
 
 ```go
