@@ -1,0 +1,42 @@
+package rsvp // import "github.com/Teajey/rsvp"
+
+
+TYPES
+
+type Handler interface {
+	ServeHTTP(h http.Header, r *http.Request) Response
+}
+
+type HandlerFunc func(h http.Header, r *http.Request) Response
+
+type Response struct {
+	Body         any
+	TemplateName string
+	SeeOther     string
+	Status       int
+}
+
+func Body(data any, template ...string) Response
+    Write data as a response body to whatever supported format is requested in
+    the Accept header Optionally provide a template name for this response
+
+func SeeOther(url string) Response
+
+func (res *Response) MediaTypes(html *html.Template, text *text.Template) iter.Seq[supportedType]
+
+func (res *Response) Write(w http.ResponseWriter, r *http.Request, h *html.Template, t *text.Template) error
+
+type ServeMux struct {
+	HtmlTemplate *html.Template
+	TextTemplate *text.Template
+	// Has unexported fields.
+}
+
+func NewServeMux() *ServeMux
+
+func (m *ServeMux) Handle(pattern string, handler Handler)
+
+func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc)
+
+func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request)
+
