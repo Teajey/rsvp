@@ -6,6 +6,6 @@ APISNAP=api.snap.txt
 git diff --quiet $APISNAP
 
 if [[ $? -ne 0 ]]; then
-  echo "There are unstaged to $APISNAP"
+  echo "There are unstaged changes to $APISNAP"
   exit 1
 fi
