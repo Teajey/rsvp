@@ -7,7 +7,9 @@ import (
 	html "html/template"
 	"iter"
 	"net/http"
+	"path/filepath"
 	"slices"
+	"strings"
 	text "text/template"
 
 	"github.com/Teajey/rsvp/internal/content"
@@ -101,16 +103,23 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 
 	supported := slices.Collect(res.mediaTypes(cfg))
 	log.Dev("supported %v", supported)
-	mediaType := chooseMediaType(r.URL, supported, content.ParseAccept(accept), cfg.ExtToProposalMap)
+
+	ext := strings.TrimPrefix(filepath.Ext(r.URL.Path), ".")
+	mediaType := chooseMediaType(ext, supported, content.ParseAccept(accept), cfg.ExtToProposalMap)
 	log.Dev("mediaType %#v", mediaType)
 
 	if mediaType == "" {
+		if ext != "" {
+			w.WriteHeader(http.StatusNotFound)
+			return nil
+		}
+
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
 	if mediaType == "text/plain" && cfg.TextTemplate == nil && res.TemplateName != "" {
-		w.WriteHeader(http.StatusNotAcceptable)
+		w.WriteHeader(http.StatusNotFound)
 		return nil
 	}
 

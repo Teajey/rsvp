@@ -74,12 +74,11 @@ World!`
 	assert.Eq(t, "body contents", "\"Hello,\\nWorld!\""+"\n", s)
 }
 
-func TestUnsupportedExtIgnored(t *testing.T) {
+func TestUnsupportedExtHasBlank404(t *testing.T) {
 	body := `Hello,
 World!`
 	res := rsvp.Response{Body: body}
 
-	// If the extension isn't supported, it's ignored
 	req := httptest.NewRequest("GET", "/message.blah", nil)
 
 	req.Header.Set("Accept", "application/*")
@@ -90,12 +89,12 @@ World!`
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", 404, statusCode)
 
-	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "\"Hello,\\nWorld!\""+"\n", s)
+	assert.Eq(t, "body contents", "", s)
 }
 
 func TestListBody(t *testing.T) {
@@ -392,7 +391,7 @@ func TestExplicitTextRequestWithoutTextTemplate(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+	assert.Eq(t, "Status code", http.StatusNotFound, statusCode)
 
 	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 
@@ -414,7 +413,7 @@ func TestExplicitHtmlRequestWithoutHtmlTemplate(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+	assert.Eq(t, "Status code", http.StatusNotFound, statusCode)
 
 	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 

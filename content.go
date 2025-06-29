@@ -2,8 +2,6 @@ package rsvp
 
 import (
 	"iter"
-	"net/url"
-	"path/filepath"
 	"strings"
 
 	"github.com/Teajey/rsvp/internal/log"
@@ -55,9 +53,7 @@ func mediaTypesEqual(a supportedType, b string) bool {
 	return false
 }
 
-func chooseMediaType(u *url.URL, supported []supportedType, accept iter.Seq[string], ext2proposal map[string]string) supportedType {
-	ext := strings.TrimPrefix(filepath.Ext(u.Path), ".")
-
+func chooseMediaType(ext string, supported []supportedType, accept iter.Seq[string], ext2proposal map[string]string) supportedType {
 	if ext != "" {
 		log.Dev("Checking extension: %#v", ext)
 		if a, ok := ext2proposal[ext]; ok {
@@ -68,8 +64,8 @@ func chooseMediaType(u *url.URL, supported []supportedType, accept iter.Seq[stri
 					return s
 				}
 			}
-			return ""
 		}
+		return ""
 	}
 
 	log.Dev("Checking accept header")
