@@ -20,16 +20,10 @@ type Response struct {
 
 func (res *Response) MediaTypes(html *html.Template, text *text.Template) iter.Seq[supportedType] {
 	return func(yield func(supportedType) bool) {
-		switch res.Body.(type) {
-		case string:
-			if !yield(mPlaintext) {
+		if html != nil && html.Lookup(res.TemplateName) != nil {
+			if !yield(mHtml) {
 				return
 			}
-			yield(mJson)
-			return
-		case []byte:
-			yield(mBytes)
-			return
 		}
 
 		if text != nil && text.Lookup(res.TemplateName) != nil {
@@ -38,10 +32,14 @@ func (res *Response) MediaTypes(html *html.Template, text *text.Template) iter.S
 			}
 		}
 
-		if html != nil && html.Lookup(res.TemplateName) != nil {
-			if !yield(mHtml) {
+		switch res.Body.(type) {
+		case string:
+			if !yield(mPlaintext) {
 				return
 			}
+		case []byte:
+			yield(mBytes)
+			return
 		}
 
 		if !yield(mJson) {
