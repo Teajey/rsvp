@@ -7,14 +7,10 @@ type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
 
-	// Controls which file extensions override the Accept header. E.g. ".json" will only accept "application/json" by default.
-	//
-	// You might instead set ".json" to accept "application/*", or "*/*" (although the latter is the default if ".json" weren't set at all)
 	ExtToProposalMap map[string]string
 }
 
 func DefaultConfig() Config
-    Sets Config.ExtensionToProposalMap = defaultExtToProposalMap
 
 type Handler interface {
 	ServeHTTP(h http.Header, r *http.Request) Response
@@ -30,8 +26,6 @@ type Response struct {
 }
 
 func Body(data any, template ...string) Response
-    Write data as a response body to whatever supported format is requested in
-    the Accept header Optionally provide a template name for this response
 
 func SeeOther(url string) Response
 

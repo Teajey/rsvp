@@ -1,0 +1,3 @@
+#!/bin/bash
+
+go doc -all | ./scripts/strip_godoc_comments

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+APISNAP=api.snap.txt
+
+./scripts/api_snapshot > $APISNAP
+git diff --quiet $APISNAP
+
+if [[ $? -ne 0 ]]; then
+  echo "There are unstaged to $APISNAP"
+  exit 1
+fi
