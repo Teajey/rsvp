@@ -17,10 +17,10 @@ const (
 )
 
 var ext2mediatype = map[string]string{
-	"md":   "*/*",
-	"txt":  string(mPlaintext),
-	"html": string(mHtml),
-	"json": string(mJson),
+	".md":   "*/*",
+	".txt":  string(mPlaintext),
+	".html": string(mHtml),
+	".json": string(mJson),
 }
 
 // mediatype string m must be well-formed
