@@ -36,8 +36,8 @@ func (res *Response) MediaTypes(cfg *Config) iter.Seq[supportedType]
 func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error
 
 type ServeMux struct {
+	Std    *http.ServeMux
 	Config *Config
-	// Has unexported fields.
 }
 
 func NewServeMux() *ServeMux

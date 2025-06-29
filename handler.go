@@ -6,19 +6,20 @@ import (
 )
 
 type ServeMux struct {
-	inner  *http.ServeMux
+	// Access to the underlying standard http.ServeMux from net/http
+	Std    *http.ServeMux
 	Config *Config
 }
 
 func NewServeMux() *ServeMux {
 	return &ServeMux{
-		inner:  http.NewServeMux(),
+		Std:    http.NewServeMux(),
 		Config: DefaultConfig(),
 	}
 }
 
 func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	m.inner.ServeHTTP(w, r)
+	m.Std.ServeHTTP(w, r)
 }
 
 type Handler interface {
@@ -28,7 +29,7 @@ type Handler interface {
 type HandlerFunc func(h http.Header, r *http.Request) Response
 
 func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc) {
-	m.inner.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+	m.Std.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		response := handler(w.Header(), r)
 
 		err := response.Write(w, r, m.Config)
