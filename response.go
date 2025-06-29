@@ -143,18 +143,6 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 	return nil
 }
 
-// Write data as a response body to whatever supported format is requested in the Accept header
-// Optionally provide a template name for this response
-func Body(data any, template ...string) Response {
-	res := Response{
-		Body: data,
-	}
-	if len(template) > 0 {
-		res.TemplateName = template[0]
-	}
-	return res
-}
-
 // Will redirect to the given URL after writing the response body.
 func SeeOther(url string) Response {
 	return Response{seeOther: url}

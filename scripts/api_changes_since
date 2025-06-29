@@ -1,3 +1,5 @@
 #!/bin/sh
 
-git diff --exit-code $1 api.snap.txt **/*_test.go
+CMD="git diff --exit-code $1 api.snap.txt $(find . -name '*_test.go' -type f)"
+echo $CMD
+$CMD

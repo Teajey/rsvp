@@ -24,8 +24,6 @@ type Response struct {
 	// Has unexported fields.
 }
 
-func Body(data any, template ...string) Response
-
 func MovedPermanently(url string) Response
 
 func NotFound() Response
