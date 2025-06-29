@@ -140,3 +140,8 @@ func Body(data any, template ...string) Response {
 func SeeOther(url string) Response {
 	return Response{SeeOther: url}
 }
+
+// Short-hand for returning empty rsvp.Response{} which is equivalent to a blank 200 OK response
+func Ok() Response {
+	return Response{}
+}

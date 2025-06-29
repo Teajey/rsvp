@@ -27,6 +27,8 @@ type Response struct {
 
 func Body(data any, template ...string) Response
 
+func Ok() Response
+
 func SeeOther(url string) Response
 
 func (res *Response) MediaTypes(cfg *Config) iter.Seq[supportedType]
