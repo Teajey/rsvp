@@ -16,8 +16,8 @@ const (
 	mJson      supportedType = "application/json"
 )
 
-var ext2mediatype = map[string]string{
-	".md":   "*/*",
+var ext2proposal = map[string]string{
+	".md":   string(mHtml),
 	".txt":  string(mPlaintext),
 	".html": string(mHtml),
 	".json": string(mJson),
@@ -50,7 +50,7 @@ func resolveMediaType(u *url.URL, supported []supportedType, accept iter.Seq[str
 	ext := filepath.Ext(u.Path)
 
 	if ext != "" {
-		if m, ok := ext2mediatype[ext]; ok {
+		if m, ok := ext2proposal[ext]; ok {
 			for _, s := range supported {
 				if mediaTypesEqual(s, m) {
 					return string(s)
