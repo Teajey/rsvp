@@ -47,6 +47,29 @@ World!`
 	assert.Eq(t, "body contents", "\"Hello,\\nWorld!\""+"\n", s)
 }
 
+func TestStringBodyJsonExt(t *testing.T) {
+	body := `Hello,
+World!`
+	res := rsvp.Response{Body: body}
+	req := httptest.NewRequest("GET", "/message.json", nil)
+
+	// Even if Accept is set, the file extension takes precedence
+	req.Header.Set("Accept", "text/html")
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, nil, nil)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "\"Hello,\\nWorld!\""+"\n", s)
+}
+
 func TestListBody(t *testing.T) {
 	body := []string{"hello", "world", "123"}
 	res := rsvp.Response{Body: body}
