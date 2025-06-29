@@ -377,3 +377,25 @@ func TestHtmlFromString(t *testing.T) {
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", res.Body.(string), s)
 }
+
+func TestExplicitTextRequestWithoutTextTemplate(t *testing.T) {
+	body := "Hello <input> World!"
+	res := rsvp.Response{Body: body, TemplateName: "tm"}
+	req := httptest.NewRequest("GET", "/home.txt", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	cfg.HtmlTemplate = html.Must(html.New("").Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
+
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
+}

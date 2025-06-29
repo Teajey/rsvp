@@ -2,6 +2,7 @@ package rsvp
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	html "html/template"
 	"iter"
@@ -31,7 +32,7 @@ type Response struct {
 func (res *Response) mediaTypes(cfg *Config) iter.Seq[supportedType] {
 	return func(yield func(supportedType) bool) {
 		if res.predeterminedMediaType != "" {
-			log.Dev("Overriding media-types with", res.predeterminedMediaType)
+			log.Dev("Overriding media-types with %s", res.predeterminedMediaType)
 			yield(supportedType(res.predeterminedMediaType))
 			return
 		}
@@ -99,11 +100,16 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 	accept := r.Header.Get("Accept")
 
 	supported := slices.Collect(res.mediaTypes(cfg))
-	log.Dev("supported", supported)
+	log.Dev("supported %v", supported)
 	mediaType := chooseMediaType(r.URL, supported, content.ParseAccept(accept), cfg.ExtToProposalMap)
-	log.Dev("mediaType: %#v", mediaType)
+	log.Dev("mediaType %#v", mediaType)
 
 	if mediaType == "" {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return nil
+	}
+
+	if mediaType == "text/plain" && cfg.TextTemplate == nil && res.TemplateName != "" {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -136,6 +142,7 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 
 	switch mediaType {
 	case mHtml:
+		log.Dev("Rendering html...")
 		if res.TemplateName != "" && cfg.HtmlTemplate != nil {
 			err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Body)
 			if err != nil {
@@ -148,31 +155,43 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 			}
 		}
 	case mPlaintext:
-		if res.TemplateName != "" && cfg.TextTemplate != nil {
-			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
-				err := tm.ExecuteTemplate(w, res.TemplateName, res.Body)
-				if err != nil {
-					return err
-				}
-			}
-		} else {
+		log.Dev("Rendering plain text...")
+
+		if cfg.TextTemplate == nil {
+			log.Dev("Writing text directly because there is no TextTemplate...")
 			_, err := w.Write([]byte(res.Body.(string)))
 			if err != nil {
 				return err
 			}
+			break
 		}
+
+		if res.TemplateName != "" {
+			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
+				log.Dev("Executing TextTemplate...")
+				err := tm.ExecuteTemplate(w, res.TemplateName, res.Body)
+				if err != nil {
+					return err
+				}
+				break
+			}
+		}
+
+		return errors.New("Either TextTemplate must not be set or TemplateName must be set to render text")
 	case mJson:
+		log.Dev("Rendering json...")
 		err := json.NewEncoder(w).Encode(res.Body)
 		if err != nil {
 			return err
 		}
 	case mBytes:
+		log.Dev("Rendering bytes...")
 		_, err := w.Write(res.Body.([]byte))
 		if err != nil {
 			return err
 		}
 	default:
-		panic(fmt.Sprintf("Unhandled mediaType: %#v", mediaType))
+		return fmt.Errorf("Unhandled mediaType: %#v", mediaType)
 	}
 
 	if res.seeOther != "" {

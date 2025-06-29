@@ -59,11 +59,11 @@ func chooseMediaType(u *url.URL, supported []supportedType, accept iter.Seq[stri
 	ext := strings.TrimPrefix(filepath.Ext(u.Path), ".")
 
 	if ext != "" {
-		log.Dev("Checking extension:", ext)
+		log.Dev("Checking extension: %#v", ext)
 		if a, ok := ext2proposal[ext]; ok {
-			log.Dev("a", a)
+			log.Dev("a %#v", a)
 			for _, s := range supported {
-				log.Dev("s", s)
+				log.Dev("s %#v", s)
 				if mediaTypesEqual(s, a) {
 					return s
 				}
@@ -73,9 +73,9 @@ func chooseMediaType(u *url.URL, supported []supportedType, accept iter.Seq[stri
 
 	log.Dev("Checking accept header")
 	for a := range accept {
-		log.Dev("a", a)
+		log.Dev("a %#v", a)
 		for _, s := range supported {
-			log.Dev("s", s)
+			log.Dev("s %#v", s)
 			if mediaTypesEqual(s, a) {
 				return s
 			}

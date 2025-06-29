@@ -28,6 +28,7 @@ type Handler interface {
 
 type HandlerFunc func(h http.Header, r *http.Request) Response
 
+// Uses the same pattern syntax as http.ServeMux
 func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc) {
 	m.Std.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		response := handler(w.Header(), r)
@@ -39,6 +40,7 @@ func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc) {
 	})
 }
 
+// Uses the same pattern syntax as http.ServeMux
 func (m *ServeMux) Handle(pattern string, handler Handler) {
 	m.HandleFunc(pattern, handler.ServeHTTP)
 }
