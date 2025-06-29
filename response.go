@@ -12,10 +12,12 @@ import (
 )
 
 type Response struct {
-	Body         any
-	TemplateName string
-	SeeOther     string
-	Status       int
+	Body              any
+	TemplateName      string
+	SeeOther          string
+	MovedPermanently  string
+	PermanentRedirect string
+	Status            int
 }
 
 func (res *Response) MediaTypes(cfg *Config) iter.Seq[supportedType] {
@@ -66,12 +68,17 @@ func DefaultConfig() *Config {
 }
 
 func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error {
-	h := w.Header()
-
-	if res.SeeOther != "" {
-		http.Redirect(w, r, res.SeeOther, http.StatusSeeOther)
+	if res.MovedPermanently != "" {
+		http.Redirect(w, r, res.MovedPermanently, http.StatusMovedPermanently)
 		return nil
 	}
+
+	if res.PermanentRedirect != "" {
+		http.Redirect(w, r, res.PermanentRedirect, http.StatusPermanentRedirect)
+		return nil
+	}
+
+	h := w.Header()
 
 	accept := r.Header.Get("Accept")
 
@@ -120,6 +127,12 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		}
 	default:
 		w.WriteHeader(http.StatusNotAcceptable)
+		return nil
+	}
+
+	if res.SeeOther != "" {
+		http.Redirect(w, r, res.SeeOther, http.StatusSeeOther)
+		return nil
 	}
 
 	return nil
@@ -137,8 +150,23 @@ func Body(data any, template ...string) Response {
 	return res
 }
 
+// Will redirect to the given URL after writing the response body.
 func SeeOther(url string) Response {
 	return Response{SeeOther: url}
+}
+
+// Will perform an immediate 301 using the given URL.
+func MovedPermanently(url string) Response {
+	return Response{MovedPermanently: url}
+}
+
+// Will perform an immediate 308 using the given URL.
+//
+// 308 is intended for non-GET links/operations.
+//
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections#permanent_redirections
+func PermanentRedirect(url string) Response {
+	return Response{PermanentRedirect: url}
 }
 
 // Short-hand for returning empty rsvp.Response{} which is equivalent to a blank 200 OK response

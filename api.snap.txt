@@ -6,7 +6,6 @@ TYPES
 type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
-
 	ExtToProposalMap map[string]string
 }
 
@@ -19,15 +18,21 @@ type Handler interface {
 type HandlerFunc func(h http.Header, r *http.Request) Response
 
 type Response struct {
-	Body         any
-	TemplateName string
-	SeeOther     string
-	Status       int
+	Body              any
+	TemplateName      string
+	SeeOther          string
+	MovedPermanently  string
+	PermanentRedirect string
+	Status            int
 }
 
 func Body(data any, template ...string) Response
 
+func MovedPermanently(url string) Response
+
 func Ok() Response
+
+func PermanentRedirect(url string) Response
 
 func SeeOther(url string) Response
 
@@ -47,4 +52,3 @@ func (m *ServeMux) Handle(pattern string, handler Handler)
 func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc)
 
 func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request)
-
