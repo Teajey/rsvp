@@ -21,8 +21,10 @@ World!`
 	err := res.Write(rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
-	statusCode := rec.Result().StatusCode
+	resp := rec.Result()
+	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", body, s)
 }
@@ -105,7 +107,9 @@ func TestListBody(t *testing.T) {
 	err := res.Write(rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
-	statusCode := rec.Result().StatusCode
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	assert.Eq(t, "Status code", 200, statusCode)
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", `["hello","world","123"]`+"\n", s)
@@ -198,10 +202,9 @@ func TestRss(t *testing.T) {
 	}
 
 	res := rsvp.Response{Body: body, TemplateName: "rss.gotmpl"}
+	res.PredetermineType("text/html", "application/rss+xml")
 	req := httptest.NewRequest("GET", "/posts.xml", nil)
 	rec := httptest.NewRecorder()
-	// Override what rsvp will set
-	rec.Header().Set("Content-Type", "application/rss+xml")
 
 	cfg := rsvp.DefaultConfig()
 	// This will make sure rsvp uses the text/html rendering scheme which I use as a hack to avoid rendering non-XML. I should probably just use encoding/xml
@@ -244,7 +247,7 @@ func TestRss(t *testing.T) {
 }
 
 func TestNotFound(t *testing.T) {
-	res := rsvp.NotFound()
+	res := rsvp.Response{Body: "404 Not Found", Status: http.StatusNotFound}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "*/*")
 	rec := httptest.NewRecorder()
@@ -258,10 +261,12 @@ func TestNotFound(t *testing.T) {
 	err = res.Write(rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
-	statusCode := rec.Result().StatusCode
+	resp := rec.Result()
+	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", 404, statusCode)
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "", s)
+	assert.Eq(t, "body contents", "404 Not Found", s)
 }
 
 func TestBlankOk(t *testing.T) {
@@ -274,8 +279,10 @@ func TestBlankOk(t *testing.T) {
 	err := res.Write(rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
-	statusCode := rec.Result().StatusCode
+	resp := rec.Result()
+	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
 }
@@ -289,10 +296,30 @@ func TestSeeOtherCanRender(t *testing.T) {
 	err := res.Write(rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
-	statusCode := rec.Result().StatusCode
+	resp := rec.Result()
+	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", res.Body.(string), s)
+}
+
+func TestSeeOtherDoesNotRenderHtml(t *testing.T) {
+	res := rsvp.SeeOther("/")
+	res.Html("<div></div>")
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
+	// FIXME: Doesn't seem like Content-Type should be set here
+	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
 }
 
 func TestPermanentRedirectDoesNotRender(t *testing.T) {
@@ -304,8 +331,49 @@ func TestPermanentRedirectDoesNotRender(t *testing.T) {
 	err := res.Write(rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
-	statusCode := rec.Result().StatusCode
+	resp := rec.Result()
+	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusPermanentRedirect, statusCode)
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
+}
+
+func TestNotFoundJson(t *testing.T) {
+	res := rsvp.Response{Body: "404 Not Found", Status: http.StatusNotFound}
+	req := httptest.NewRequest("GET", "/post.json", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+
+	htmlTmpl, err := html.New("").ParseFiles("./internal/fixtures/rss.gotmpl")
+	assert.FatalErr(t, "loading rss template", err)
+	cfg.HtmlTemplate = htmlTmpl
+
+	err = res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 404, statusCode)
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", `"404 Not Found"`+"\n", s)
+}
+
+func TestHtmlFromString(t *testing.T) {
+	res := rsvp.Ok()
+	res.Html("<div></div>")
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", res.Body.(string), s)
 }

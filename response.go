@@ -2,6 +2,7 @@ package rsvp
 
 import (
 	"encoding/json"
+	"fmt"
 	html "html/template"
 	"iter"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	text "text/template"
 
 	"github.com/Teajey/rsvp/internal/content"
+	"github.com/Teajey/rsvp/internal/log"
 )
 
 type Response struct {
@@ -18,13 +20,22 @@ type Response struct {
 	TemplateName string
 	Status       int
 
+	predeterminedMediaType   supportedType
+	predeterminedContentType string
+
 	seeOther          string
 	movedPermanently  string
 	permanentRedirect string
 }
 
-func (res *Response) MediaTypes(cfg *Config) iter.Seq[supportedType] {
+func (res *Response) mediaTypes(cfg *Config) iter.Seq[supportedType] {
 	return func(yield func(supportedType) bool) {
+		if res.predeterminedMediaType != "" {
+			log.Dev("Overriding media-types with", res.predeterminedMediaType)
+			yield(supportedType(res.predeterminedMediaType))
+			return
+		}
+
 		if res.TemplateName != "" {
 			if cfg.HtmlTemplate != nil && cfg.HtmlTemplate.Lookup(res.TemplateName) != nil {
 				if !yield(mHtml) {
@@ -87,28 +98,57 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 
 	accept := r.Header.Get("Accept")
 
+	supported := slices.Collect(res.mediaTypes(cfg))
+	log.Dev("supported", supported)
+	mediaType := chooseMediaType(r.URL, supported, content.ParseAccept(accept), cfg.ExtToProposalMap)
+	log.Dev("mediaType: %#v", mediaType)
+
+	if mediaType == "" {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return nil
+	}
+
+	if res.Body == nil {
+		log.Dev("Early returning because body is nil")
+		return nil
+	}
+
+	var contentType string
+	if res.predeterminedMediaType != "" {
+		// In this case, assuming mediaType == res.PredeterminedMediaType
+		contentType = res.predeterminedContentType
+	} else {
+		contentType = mediaTypeToContentType[mediaType]
+	}
+	log.Dev("Setting content-type to %#v", contentType)
+	h.Set("Content-Type", contentType)
+
 	if res.Status != 0 {
 		w.WriteHeader(res.Status)
 	}
 
-	supported := slices.Collect(res.MediaTypes(cfg))
-	mediaType := resolveMediaType(r.URL, supported, content.ParseAccept(accept), cfg.ExtToProposalMap)
-
 	// If the client's getting HTML they're probably using a browser which will
 	// automatically follow this SeeOther. We shouldn't bother rendering anything.
-	if mediaType == "text/html" && res.seeOther != "" {
+	if res.seeOther != "" && mediaType == "text/html" {
 		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
 		return nil
 	}
 
 	switch mediaType {
-	case string(mHtml):
-		err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Body)
-		if err != nil {
-			return err
+	case mHtml:
+		if res.TemplateName != "" && cfg.HtmlTemplate != nil {
+			err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Body)
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err := w.Write([]byte(res.Body.(string)))
+			if err != nil {
+				return err
+			}
 		}
-	case string(mPlaintext):
-		if cfg.TextTemplate != nil {
+	case mPlaintext:
+		if res.TemplateName != "" && cfg.TextTemplate != nil {
 			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
 				err := tm.ExecuteTemplate(w, res.TemplateName, res.Body)
 				if err != nil {
@@ -121,25 +161,18 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 				return err
 			}
 		}
-	case string(mJson):
-		if h.Get("Content-Type") == "" {
-			w.Header().Set("Content-Type", string(mJson))
-		}
+	case mJson:
 		err := json.NewEncoder(w).Encode(res.Body)
 		if err != nil {
 			return err
 		}
-	case string(mBytes):
-		if h.Get("Content-Type") == "" {
-			w.Header().Set("Content-Type", string(mBytes))
-		}
+	case mBytes:
 		_, err := w.Write(res.Body.([]byte))
 		if err != nil {
 			return err
 		}
 	default:
-		w.WriteHeader(http.StatusNotAcceptable)
-		return nil
+		panic(fmt.Sprintf("Unhandled mediaType: %#v", mediaType))
 	}
 
 	if res.seeOther != "" {
@@ -180,24 +213,27 @@ func PermanentRedirect(url string) Response {
 	return Response{permanentRedirect: url}
 }
 
-// Short-hand for returning rsvp.Response{Body: ""} which is equivalent to a blank 200 OK response
+// Short-hand for returning rsvp.Response{} which is equivalent to a blank 200 OK response
 func Ok() Response {
-	return Response{Body: ""}
+	return Response{}
 }
 
-// Short-hand for returning a blank 404 NotFound response.
+// Set body to html using a string, making sure "Content-Type: text/html; charset=utf-8" is set.
 //
-// You can set Body and TemplateName afterwards to add information.
+// Use rsvp.ServeMux.HtmlTemplate and rsvp.Response.TemplateName to render from an HTML template.
+func (r *Response) Html(html string) {
+	r.Body = html
+	r.predeterminedMediaType = mHtml
+	r.predeterminedContentType = mediaTypeToContentType[mHtml]
+}
+
+// Override the media type that rsvp will use.
 //
-// ```
-// resp := rsvp.NotFound()
-// resp.Body = "404: Couldn't find this page."
-// resp.TemplateName = "not_found"
-// return resp
-// ```
-func NotFound() Response {
-	return Response{
-		Status: http.StatusNotFound,
-		Body:   "",
-	}
+// Use this with caution.
+//
+// mediaType MUST be set to one of the supportedTypes to determine which rendering mode to use,
+// but contentType may be any valid value of a Content-Type header
+func (r *Response) PredetermineType(mediaType supportedType, contentType string) {
+	r.predeterminedMediaType = mediaType
+	r.predeterminedContentType = contentType
 }

@@ -5,8 +5,11 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
+
+	"github.com/Teajey/rsvp/internal/log"
 )
 
+// TODO: I'm not sure that this type is helpful. It might be worth removing.
 type supportedType string
 
 const (
@@ -15,6 +18,13 @@ const (
 	mBytes     supportedType = "application/octet-stream"
 	mJson      supportedType = "application/json"
 )
+
+var mediaTypeToContentType = map[supportedType]string{
+	mPlaintext: "text/plain; charset=utf-8",
+	mHtml:      "text/html; charset=utf-8",
+	mBytes:     "application/octet-stream",
+	mJson:      "application/json",
+}
 
 var defaultExtToProposalMap = map[string]string{
 	"txt":  string(mPlaintext),
@@ -45,24 +55,29 @@ func mediaTypesEqual(a supportedType, b string) bool {
 	return false
 }
 
-func resolveMediaType(u *url.URL, supported []supportedType, accept iter.Seq[string], ext2proposal map[string]string) string {
+func chooseMediaType(u *url.URL, supported []supportedType, accept iter.Seq[string], ext2proposal map[string]string) supportedType {
 	ext := strings.TrimPrefix(filepath.Ext(u.Path), ".")
 
 	if ext != "" {
-		if m, ok := ext2proposal[ext]; ok {
+		log.Dev("Checking extension:", ext)
+		if a, ok := ext2proposal[ext]; ok {
+			log.Dev("a", a)
 			for _, s := range supported {
-				if mediaTypesEqual(s, m) {
-					return string(s)
+				log.Dev("s", s)
+				if mediaTypesEqual(s, a) {
+					return s
 				}
 			}
-			return ""
 		}
 	}
 
+	log.Dev("Checking accept header")
 	for a := range accept {
+		log.Dev("a", a)
 		for _, s := range supported {
+			log.Dev("s", s)
 			if mediaTypesEqual(s, a) {
-				return string(s)
+				return s
 			}
 		}
 	}
