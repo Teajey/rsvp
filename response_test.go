@@ -16,7 +16,7 @@ World!`
 	res := rsvp.Response{Body: body}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
-	err := res.Write(rec, req, nil, nil)
+	err := res.Write(rec, req, rsvp.Config{})
 	if err != nil {
 		t.Fatalf("Write failed: %s", err)
 	}
@@ -34,7 +34,7 @@ World!`
 	req.Header.Set("Accept", "application/*")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, nil, nil)
+	err := res.Write(rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -57,7 +57,8 @@ World!`
 	req.Header.Set("Accept", "text/html")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, nil, nil)
+	// Note Config.ExtensionToProposalMap must be set for this to work
+	err := res.Write(rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -81,7 +82,7 @@ World!`
 	req.Header.Set("Accept", "application/*")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, nil, nil)
+	err := res.Write(rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -100,7 +101,7 @@ func TestListBody(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, nil, nil)
+	err := res.Write(rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	statusCode := rec.Result().StatusCode
@@ -116,7 +117,7 @@ func TestBytesBody(t *testing.T) {
 	req.Header.Set("Accept", "application/*")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, nil, nil)
+	err := res.Write(rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -130,17 +131,18 @@ func TestBytesBody(t *testing.T) {
 }
 
 func TestHtmlTemplate(t *testing.T) {
-	body := "Hello, World!"
+	body := "Hello <input> World!"
 	res := rsvp.Response{Body: body, TemplateName: "tm"}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
-	h := html.New("")
-	h = html.Must(h.Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
-	x := text.New("")
-	x = text.Must(x.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
+	cfg := rsvp.DefaultConfig()
+	cfg.HtmlTemplate = html.New("")
+	cfg.HtmlTemplate = html.Must(cfg.HtmlTemplate.Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
+	cfg.TextTemplate = text.New("")
+	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, h, x)
+	err := res.Write(rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -150,7 +152,7 @@ func TestHtmlTemplate(t *testing.T) {
 	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
 
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "<div>Hello, World!</div>", s)
+	assert.Eq(t, "body contents", "<div>Hello &lt;input&gt; World!</div>", s)
 }
 
 func TestTextTemplate(t *testing.T) {
@@ -160,12 +162,13 @@ func TestTextTemplate(t *testing.T) {
 	req.Header.Set("Accept", "text/plain")
 	rec := httptest.NewRecorder()
 
-	h := html.New("")
-	h = html.Must(h.Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
-	x := text.New("")
-	x = text.Must(x.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
+	cfg := rsvp.DefaultConfig()
+	cfg.HtmlTemplate = html.New("")
+	cfg.HtmlTemplate = html.Must(cfg.HtmlTemplate.Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
+	cfg.TextTemplate = text.New("")
+	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, h, x)
+	err := res.Write(rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()

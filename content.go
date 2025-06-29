@@ -16,8 +16,7 @@ const (
 	mJson      supportedType = "application/json"
 )
 
-var ext2proposal = map[string]string{
-	".md":   string(mHtml),
+var defaultExtToProposalMap = map[string]string{
 	".txt":  string(mPlaintext),
 	".html": string(mHtml),
 	".json": string(mJson),
@@ -46,7 +45,7 @@ func mediaTypesEqual(a supportedType, b string) bool {
 	return false
 }
 
-func resolveMediaType(u *url.URL, supported []supportedType, accept iter.Seq[string]) string {
+func resolveMediaType(u *url.URL, supported []supportedType, accept iter.Seq[string], ext2proposal map[string]string) string {
 	ext := filepath.Ext(u.Path)
 
 	if ext != "" {

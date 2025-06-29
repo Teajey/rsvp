@@ -18,15 +18,15 @@ type Response struct {
 	Status       int
 }
 
-func (res *Response) MediaTypes(html *html.Template, text *text.Template) iter.Seq[supportedType] {
+func (res *Response) MediaTypes(cfg *Config) iter.Seq[supportedType] {
 	return func(yield func(supportedType) bool) {
-		if html != nil && html.Lookup(res.TemplateName) != nil {
+		if cfg.HtmlTemplate != nil && cfg.HtmlTemplate.Lookup(res.TemplateName) != nil {
 			if !yield(mHtml) {
 				return
 			}
 		}
 
-		if text != nil && text.Lookup(res.TemplateName) != nil {
+		if cfg.TextTemplate != nil && cfg.TextTemplate.Lookup(res.TemplateName) != nil {
 			if !yield(mPlaintext) {
 				return
 			}
@@ -48,7 +48,24 @@ func (res *Response) MediaTypes(html *html.Template, text *text.Template) iter.S
 	}
 }
 
-func (res *Response) Write(w http.ResponseWriter, r *http.Request, h *html.Template, t *text.Template) error {
+type Config struct {
+	HtmlTemplate *html.Template
+	TextTemplate *text.Template
+
+	// Controls which file extensions override the Accept header. E.g. ".json" will only accept "application/json" by default.
+	//
+	// You might instead set ".json" to accept "application/*", or "*/*" (although the latter is the default if ".json" weren't set at all)
+	ExtToProposalMap map[string]string
+}
+
+// Sets Config.ExtensionToProposalMap = defaultExtToProposalMap
+func DefaultConfig() Config {
+	return Config{
+		ExtToProposalMap: defaultExtToProposalMap,
+	}
+}
+
+func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) error {
 	if res.SeeOther != "" {
 		http.Redirect(w, r, res.SeeOther, http.StatusSeeOther)
 		return nil
@@ -60,18 +77,18 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, h *html.Templ
 		w.WriteHeader(res.Status)
 	}
 
-	supported := slices.Collect(res.MediaTypes(h, t))
-	mediaType := resolveMediaType(r.URL, supported, content.ParseAccept(accept))
+	supported := slices.Collect(res.MediaTypes(&cfg))
+	mediaType := resolveMediaType(r.URL, supported, content.ParseAccept(accept), cfg.ExtToProposalMap)
 
 	switch mediaType {
 	case string(mHtml):
-		err := h.ExecuteTemplate(w, res.TemplateName, res.Body)
+		err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Body)
 		if err != nil {
 			return err
 		}
 	case string(mPlaintext):
-		if t != nil {
-			if tm := t.Lookup(res.TemplateName); tm != nil {
+		if cfg.TextTemplate != nil {
+			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
 				err := tm.ExecuteTemplate(w, res.TemplateName, res.Body)
 				if err != nil {
 					return err
