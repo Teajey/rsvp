@@ -1,0 +1,3 @@
+#!/bin/sh
+
+git diff --exit-code $1 api.snap.txt **/*_test.go
