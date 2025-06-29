@@ -94,6 +94,13 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 	supported := slices.Collect(res.MediaTypes(cfg))
 	mediaType := resolveMediaType(r.URL, supported, content.ParseAccept(accept), cfg.ExtToProposalMap)
 
+	// If the client's getting HTML they're probably using a browser which will
+	// automatically follow this SeeOther. We shouldn't bother rendering anything.
+	if mediaType == "text/html" && res.seeOther != "" {
+		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
+		return nil
+	}
+
 	switch mediaType {
 	case string(mHtml):
 		err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Body)
@@ -144,8 +151,19 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 }
 
 // Will redirect to the given URL after writing the response body.
+//
+// Except for rendering HTML, the body will still be rendered in
+// this case. For instance, if the request was a JSON PUT from
+// the commandline it's helpful to see the result without having
+// to manually follow the Location header.
 func SeeOther(url string) Response {
-	return Response{seeOther: url}
+	return Response{
+		seeOther: url,
+
+		// Status must be set here otherwise any writes
+		// to http.ResponseWriter will beat us to the punch
+		Status: http.StatusSeeOther,
+	}
 }
 
 // Will perform an immediate 301 using the given URL.

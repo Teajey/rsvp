@@ -2,6 +2,7 @@ package rsvp_test
 
 import (
 	html "html/template"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	text "text/template"
@@ -275,6 +276,36 @@ func TestBlankOk(t *testing.T) {
 
 	statusCode := rec.Result().StatusCode
 	assert.Eq(t, "Status code", 200, statusCode)
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
+}
+
+func TestSeeOtherCanRender(t *testing.T) {
+	res := rsvp.SeeOther("/")
+	res.Body = "POST successful"
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	statusCode := rec.Result().StatusCode
+	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", res.Body.(string), s)
+}
+
+func TestPermanentRedirectDoesNotRender(t *testing.T) {
+	res := rsvp.PermanentRedirect("/")
+	res.Body = "POST successful"
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	statusCode := rec.Result().StatusCode
+	assert.Eq(t, "Status code", http.StatusPermanentRedirect, statusCode)
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
 }
