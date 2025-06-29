@@ -10,7 +10,7 @@ type Config struct {
 	ExtToProposalMap map[string]string
 }
 
-func DefaultConfig() Config
+func DefaultConfig() *Config
 
 type Handler interface {
 	ServeHTTP(h http.Header, r *http.Request) Response
@@ -31,10 +31,10 @@ func SeeOther(url string) Response
 
 func (res *Response) MediaTypes(cfg *Config) iter.Seq[supportedType]
 
-func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) error
+func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error
 
 type ServeMux struct {
-	Config
+	Config *Config
 	// Has unexported fields.
 }
 

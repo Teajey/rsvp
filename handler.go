@@ -6,8 +6,8 @@ import (
 )
 
 type ServeMux struct {
-	inner *http.ServeMux
-	Config
+	inner  *http.ServeMux
+	Config *Config
 }
 
 func NewServeMux() *ServeMux {

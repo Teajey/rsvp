@@ -17,9 +17,9 @@ const (
 )
 
 var defaultExtToProposalMap = map[string]string{
-	".txt":  string(mPlaintext),
-	".html": string(mHtml),
-	".json": string(mJson),
+	"txt":  string(mPlaintext),
+	"html": string(mHtml),
+	"json": string(mJson),
 }
 
 // mediatype string m must be well-formed
@@ -46,7 +46,7 @@ func mediaTypesEqual(a supportedType, b string) bool {
 }
 
 func resolveMediaType(u *url.URL, supported []supportedType, accept iter.Seq[string], ext2proposal map[string]string) string {
-	ext := filepath.Ext(u.Path)
+	ext := strings.TrimPrefix(filepath.Ext(u.Path), ".")
 
 	if ext != "" {
 		if m, ok := ext2proposal[ext]; ok {

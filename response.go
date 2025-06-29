@@ -52,20 +52,22 @@ type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
 
-	// Controls which file extensions override the Accept header. E.g. ".json" will only accept "application/json" by default.
+	// Controls which file extensions override the Accept header. E.g. "json" will only accept "application/json" by default.
 	//
-	// You might instead set ".json" to accept "application/*", or "*/*" (although the latter is the default if ".json" weren't set at all)
+	// You might instead set "json" to accept "application/*", or "*/*" (although the latter is the default if "json" weren't set at all)
 	ExtToProposalMap map[string]string
 }
 
 // Sets Config.ExtensionToProposalMap = defaultExtToProposalMap
-func DefaultConfig() Config {
-	return Config{
+func DefaultConfig() *Config {
+	return &Config{
 		ExtToProposalMap: defaultExtToProposalMap,
 	}
 }
 
-func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) error {
+func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error {
+	h := w.Header()
+
 	if res.SeeOther != "" {
 		http.Redirect(w, r, res.SeeOther, http.StatusSeeOther)
 		return nil
@@ -77,7 +79,7 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) e
 		w.WriteHeader(res.Status)
 	}
 
-	supported := slices.Collect(res.MediaTypes(&cfg))
+	supported := slices.Collect(res.MediaTypes(cfg))
 	mediaType := resolveMediaType(r.URL, supported, content.ParseAccept(accept), cfg.ExtToProposalMap)
 
 	switch mediaType {
@@ -101,13 +103,17 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) e
 			}
 		}
 	case string(mJson):
-		w.Header().Set("Content-Type", string(mJson))
+		if h.Get("Content-Type") == "" {
+			w.Header().Set("Content-Type", string(mJson))
+		}
 		err := json.NewEncoder(w).Encode(res.Body)
 		if err != nil {
 			return err
 		}
 	case string(mBytes):
-		w.Header().Set("Content-Type", string(mBytes))
+		if h.Get("Content-Type") == "" {
+			w.Header().Set("Content-Type", string(mBytes))
+		}
 		_, err := w.Write(res.Body.([]byte))
 		if err != nil {
 			return err
