@@ -18,12 +18,10 @@ type Handler interface {
 type HandlerFunc func(h http.Header, r *http.Request) Response
 
 type Response struct {
-	Body              any
-	TemplateName      string
-	SeeOther          string
-	MovedPermanently  string
-	PermanentRedirect string
-	Status            int
+	Body         any
+	TemplateName string
+	Status       int
+	// Has unexported fields.
 }
 
 func Body(data any, template ...string) Response

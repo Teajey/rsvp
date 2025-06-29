@@ -12,12 +12,13 @@ import (
 )
 
 type Response struct {
-	Body              any
-	TemplateName      string
-	SeeOther          string
-	MovedPermanently  string
-	PermanentRedirect string
-	Status            int
+	Body         any
+	TemplateName string
+	Status       int
+
+	seeOther          string
+	movedPermanently  string
+	permanentRedirect string
 }
 
 func (res *Response) MediaTypes(cfg *Config) iter.Seq[supportedType] {
@@ -68,13 +69,13 @@ func DefaultConfig() *Config {
 }
 
 func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error {
-	if res.MovedPermanently != "" {
-		http.Redirect(w, r, res.MovedPermanently, http.StatusMovedPermanently)
+	if res.movedPermanently != "" {
+		http.Redirect(w, r, res.movedPermanently, http.StatusMovedPermanently)
 		return nil
 	}
 
-	if res.PermanentRedirect != "" {
-		http.Redirect(w, r, res.PermanentRedirect, http.StatusPermanentRedirect)
+	if res.permanentRedirect != "" {
+		http.Redirect(w, r, res.permanentRedirect, http.StatusPermanentRedirect)
 		return nil
 	}
 
@@ -130,8 +131,8 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		return nil
 	}
 
-	if res.SeeOther != "" {
-		http.Redirect(w, r, res.SeeOther, http.StatusSeeOther)
+	if res.seeOther != "" {
+		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
 		return nil
 	}
 
@@ -152,12 +153,12 @@ func Body(data any, template ...string) Response {
 
 // Will redirect to the given URL after writing the response body.
 func SeeOther(url string) Response {
-	return Response{SeeOther: url}
+	return Response{seeOther: url}
 }
 
 // Will perform an immediate 301 using the given URL.
 func MovedPermanently(url string) Response {
-	return Response{MovedPermanently: url}
+	return Response{movedPermanently: url}
 }
 
 // Will perform an immediate 308 using the given URL.
@@ -166,7 +167,7 @@ func MovedPermanently(url string) Response {
 //
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections#permanent_redirections
 func PermanentRedirect(url string) Response {
-	return Response{PermanentRedirect: url}
+	return Response{permanentRedirect: url}
 }
 
 // Short-hand for returning empty rsvp.Response{} which is equivalent to a blank 200 OK response
