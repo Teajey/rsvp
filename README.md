@@ -42,8 +42,10 @@ if r.Method != http.MethodPut {
 (Wrapping this with your own convenience method, i.e. `func ErrorMethodNotAllowed(message string) rsvp.Response` is encouraged. You get to decide for yourself how errors are represented)
 
 ## Features
- - Respects the Accept header and will attempt to provide the data in a format that is requested.
-   - [x] JSON
-   - [x] HTML
-   - [ ] Plain text
+ - Respects the Accept header and will attempt to provide the data in the supported media-type that is requested.
+   - [x] `application/json`
+   - [x] `text/html`
+   - [x] `text/plain`
+   - [x] `application/octet-stream`
+   - [ ] `application/vnd.msgpack` (optional)
    - [ ] Other?
