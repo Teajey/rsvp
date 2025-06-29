@@ -39,8 +39,8 @@ func mediaTypesEqual(a supportedType, b string) bool {
 	s := string(a)
 	s1, s2 := splitMediaType(s)
 
-	if b2 == s2 {
-		return b1 == "*" || b1 == s1
+	if b1 == s1 {
+		return b2 == "*" || b2 == s2
 	}
 
 	return false

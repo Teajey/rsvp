@@ -14,7 +14,7 @@ func Eq[C comparable](t *testing.T, context string, expected, actual C) {
 
 func True(t *testing.T, context string, condition bool) {
 	if !condition {
-		t.Errorf("%s", context)
+		t.Errorf("false: %s", context)
 	}
 }
 

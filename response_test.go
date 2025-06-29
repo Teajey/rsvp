@@ -31,17 +31,20 @@ func TestStringBodyAcceptApp(t *testing.T) {
 World!`
 	res := rsvp.Response{Body: body}
 	req := httptest.NewRequest("GET", "/", nil)
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept", "application/*")
 	rec := httptest.NewRecorder()
 
 	err := res.Write(rec, req, nil, nil)
 	assert.FatalErr(t, "Write response", err)
 
-	statusCode := rec.Result().StatusCode
+	resp := rec.Result()
+	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", 200, statusCode)
 
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", `["hello","world","123"]`+"\n", s)
+	assert.Eq(t, "body contents", "\"Hello,\\nWorld!\""+"\n", s)
 }
 
 func TestListBody(t *testing.T) {

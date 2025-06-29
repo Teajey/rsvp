@@ -22,7 +22,10 @@ func (res *Response) MediaTypes(html *html.Template, text *text.Template) iter.S
 	return func(yield func(supportedType) bool) {
 		switch res.Body.(type) {
 		case string:
-			yield(mPlaintext)
+			if !yield(mPlaintext) {
+				return
+			}
+			yield(mJson)
 			return
 		case []byte:
 			yield(mBytes)
@@ -83,6 +86,7 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, h *html.Templ
 			}
 		}
 	case string(mJson):
+		w.Header().Set("Content-Type", string(mJson))
 		err := json.NewEncoder(w).Encode(res.Body)
 		if err != nil {
 			return err
@@ -94,7 +98,7 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, h *html.Templ
 			return err
 		}
 	default:
-		w.WriteHeader(http.StatusUnsupportedMediaType)
+		w.WriteHeader(http.StatusNotAcceptable)
 	}
 
 	return nil
