@@ -70,6 +70,30 @@ World!`
 	assert.Eq(t, "body contents", "\"Hello,\\nWorld!\""+"\n", s)
 }
 
+func TestUnsupportedExtIgnored(t *testing.T) {
+	body := `Hello,
+World!`
+	res := rsvp.Response{Body: body}
+
+	// If the extension isn't supported, it's ignored
+	req := httptest.NewRequest("GET", "/message.blah", nil)
+
+	req.Header.Set("Accept", "application/*")
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, nil, nil)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "\"Hello,\\nWorld!\""+"\n", s)
+}
+
 func TestListBody(t *testing.T) {
 	body := []string{"hello", "world", "123"}
 	res := rsvp.Response{Body: body}
