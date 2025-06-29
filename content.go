@@ -68,6 +68,7 @@ func chooseMediaType(u *url.URL, supported []supportedType, accept iter.Seq[stri
 					return s
 				}
 			}
+			return ""
 		}
 	}
 
