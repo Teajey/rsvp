@@ -18,6 +18,15 @@ type Handler interface {
 }
 ```
 
+## Features
+ - Respects the Accept header and will attempt to provide the data in the supported media-type that is requested.
+   - [x] `application/json`
+   - [x] `text/html`
+   - [x] `text/plain`
+   - [x] `application/octet-stream`
+   - [ ] `application/vnd.msgpack` (optional)
+   - [ ] Other?
+
 It's easy for me to lose track of what I've written to [`http.ResponseWriter`](https://pkg.go.dev/net/http#ResponseWriter) occasionally receiving the old `http: multiple response.WriteHeader calls`
 
 With this library I just return a value, and I can only ever do it once, to execute an HTTP response write. Why write responses with a weird mutable reference from goodness knows where? YEUCH!
@@ -40,12 +49,3 @@ if r.Method != http.MethodPut {
 ```
 
 (Wrapping this with your own convenience method, i.e. `func ErrorMethodNotAllowed(message string) rsvp.Response` is encouraged. You get to decide for yourself how errors are represented)
-
-## Features
- - Respects the Accept header and will attempt to provide the data in the supported media-type that is requested.
-   - [x] `application/json`
-   - [x] `text/html`
-   - [x] `text/plain`
-   - [x] `application/octet-stream`
-   - [ ] `application/vnd.msgpack` (optional)
-   - [ ] Other?
