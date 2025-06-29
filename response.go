@@ -12,6 +12,8 @@ import (
 )
 
 type Response struct {
+	// Beware that the default value of nil will likely render as JSON "null\n" rather
+	// than the expected empty body. Set Body to "" to avoid this.
 	Body         any
 	TemplateName string
 	Status       int
@@ -23,15 +25,17 @@ type Response struct {
 
 func (res *Response) MediaTypes(cfg *Config) iter.Seq[supportedType] {
 	return func(yield func(supportedType) bool) {
-		if cfg.HtmlTemplate != nil && cfg.HtmlTemplate.Lookup(res.TemplateName) != nil {
-			if !yield(mHtml) {
-				return
+		if res.TemplateName != "" {
+			if cfg.HtmlTemplate != nil && cfg.HtmlTemplate.Lookup(res.TemplateName) != nil {
+				if !yield(mHtml) {
+					return
+				}
 			}
-		}
 
-		if cfg.TextTemplate != nil && cfg.TextTemplate.Lookup(res.TemplateName) != nil {
-			if !yield(mPlaintext) {
-				return
+			if cfg.TextTemplate != nil && cfg.TextTemplate.Lookup(res.TemplateName) != nil {
+				if !yield(mPlaintext) {
+					return
+				}
 			}
 		}
 
@@ -170,7 +174,24 @@ func PermanentRedirect(url string) Response {
 	return Response{permanentRedirect: url}
 }
 
-// Short-hand for returning empty rsvp.Response{} which is equivalent to a blank 200 OK response
+// Short-hand for returning rsvp.Response{Body: ""} which is equivalent to a blank 200 OK response
 func Ok() Response {
-	return Response{}
+	return Response{Body: ""}
+}
+
+// Short-hand for returning a blank 404 NotFound response.
+//
+// You can set Body and TemplateName afterwards to add information.
+//
+// ```
+// resp := rsvp.NotFound()
+// resp.Body = "404: Couldn't find this page."
+// resp.TemplateName = "not_found"
+// return resp
+// ```
+func NotFound() Response {
+	return Response{
+		Status: http.StatusNotFound,
+		Body:   "",
+	}
 }

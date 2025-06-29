@@ -28,6 +28,8 @@ func Body(data any, template ...string) Response
 
 func MovedPermanently(url string) Response
 
+func NotFound() Response
+
 func Ok() Response
 
 func PermanentRedirect(url string) Response

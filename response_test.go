@@ -18,9 +18,8 @@ World!`
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 	err := res.Write(rec, req, rsvp.DefaultConfig())
-	if err != nil {
-		t.Fatalf("Write failed: %s", err)
-	}
+	assert.FatalErr(t, "Write response", err)
+
 	statusCode := rec.Result().StatusCode
 	assert.Eq(t, "Status code", 200, statusCode)
 	s := rec.Body.String()
@@ -241,4 +240,41 @@ func TestRss(t *testing.T) {
    </channel>
 </rss>
 `, s)
+}
+
+func TestNotFound(t *testing.T) {
+	res := rsvp.NotFound()
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "*/*")
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+
+	htmlTmpl, err := html.New("").ParseFiles("./internal/fixtures/rss.gotmpl")
+	assert.FatalErr(t, "loading rss template", err)
+	cfg.HtmlTemplate = htmlTmpl
+
+	err = res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	statusCode := rec.Result().StatusCode
+	assert.Eq(t, "Status code", 404, statusCode)
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
+}
+
+func TestBlankOk(t *testing.T) {
+	res := rsvp.Ok()
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	statusCode := rec.Result().StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
 }
