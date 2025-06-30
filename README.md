@@ -45,7 +45,7 @@ Not with RSVP 🫠
 
 ```go
 if r.Method != http.MethodPut {
-	return rsvp.Response{Status: http.StatusMethodNotAllowed, Body: "Use Put"}
+	return rsvp.Response{Status: http.StatusMethodNotAllowed, Body: "Use PUT"}
 }
 ```
 
