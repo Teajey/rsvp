@@ -36,7 +36,7 @@ Having to remember to return separately from resolving the response? \*wretch*
 
 ```go
 if r.Method != http.MethodPut {
-	http.Error(w, "Use PUT", http.StatusNotFound)
+	http.Error(w, "Use PUT", http.StatusMethodNotAllowed)
 	return
 }
 ```
