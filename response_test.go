@@ -1,6 +1,7 @@
 package rsvp_test
 
 import (
+	"bytes"
 	html "html/template"
 	"net/http"
 	"net/http/httptest"
@@ -159,7 +160,7 @@ func TestHtmlTemplate(t *testing.T) {
 	assert.Eq(t, "body contents", "<div>Hello &lt;input&gt; World!</div>", s)
 }
 
-func TestTextTemplate(t *testing.T) {
+func TestTextTemplateWithName(t *testing.T) {
 	body := "Hello, World!"
 	res := rsvp.Response{Body: body, TemplateName: "tm"}
 	req := httptest.NewRequest("GET", "/", nil)
@@ -183,6 +184,49 @@ func TestTextTemplate(t *testing.T) {
 
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "Message: Hello, World!", s)
+}
+
+func TestTextTemplateWithoutName(t *testing.T) {
+	body := "Hello, World!"
+	res := rsvp.Response{Body: body}
+	req := httptest.NewRequest("GET", "/message.txt", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	cfg.TextTemplate = text.New("")
+	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
+
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "Hello, World!", s)
+}
+
+func TestAttemptToRenderNonTextAsText(t *testing.T) {
+	body := map[string]string{"I'm": "a map"}
+	res := rsvp.Response{Body: body}
+	req := httptest.NewRequest("GET", "/message.txt", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 404, statusCode)
+
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
 }
 
 func TestRss(t *testing.T) {
@@ -438,4 +482,21 @@ World!`
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", body, s)
+}
+
+func TestPutWithOkResponse(t *testing.T) {
+	res := rsvp.Ok()
+	req := httptest.NewRequest("PUT", "/files/file.md", bytes.NewBufferString("Some submission"))
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
 }
