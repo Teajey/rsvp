@@ -158,12 +158,12 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		if res.TemplateName != "" && cfg.HtmlTemplate != nil {
 			err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Body)
 			if err != nil {
-				return err
+				return fmt.Errorf("Failed to render body HTML template %s: %w", res.TemplateName, err)
 			}
 		} else {
 			_, err := w.Write([]byte(res.Body.(string)))
 			if err != nil {
-				return err
+				return fmt.Errorf("Failed to write string as HTML: %w", err)
 			}
 		}
 	case mPlaintext:
@@ -176,7 +176,7 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 				log.Dev("Executing TextTemplate...")
 				err := tm.ExecuteTemplate(w, res.TemplateName, res.Body)
 				if err != nil {
-					return err
+					return fmt.Errorf("Failed to render body as text template %s: %w", res.TemplateName, err)
 				}
 				break
 			}
@@ -189,7 +189,7 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 			log.Dev("Can write text directly because it is a string...")
 			_, err := w.Write([]byte(body))
 			if err != nil {
-				return err
+				return fmt.Errorf("Failed to render body as plain-text string: %w", err)
 			}
 			break
 		}
@@ -199,13 +199,13 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		log.Dev("Rendering json...")
 		err := json.NewEncoder(w).Encode(res.Body)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to render body as JSON: %w", err)
 		}
 	case mBytes:
 		log.Dev("Rendering bytes...")
 		_, err := w.Write(res.Body.([]byte))
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to render body as bytes: %w", err)
 		}
 	default:
 		return fmt.Errorf("Unhandled mediaType: %#v", mediaType)
