@@ -420,3 +420,22 @@ func TestExplicitHtmlRequestWithoutHtmlTemplate(t *testing.T) {
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
 }
+
+func TestNestedFile(t *testing.T) {
+	body := `Hello,
+World!`
+	res := rsvp.Response{Body: body}
+	req := httptest.NewRequest("GET", "/files/file.md", nil)
+	rec := httptest.NewRecorder()
+	cfg := rsvp.DefaultConfig()
+	cfg.ExtToProposalMap["md"] = "text/plain"
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", body, s)
+}
