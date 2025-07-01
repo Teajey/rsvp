@@ -2,7 +2,6 @@ package rsvp
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	html "html/template"
 	"iter"
@@ -104,7 +103,11 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 	supported := slices.Collect(res.mediaTypes(cfg))
 	log.Dev("supported %v", supported)
 
-	ext := strings.TrimPrefix(filepath.Ext(r.URL.Path), ".")
+	var ext string
+	if r.Method == http.MethodGet {
+		ext = strings.TrimPrefix(filepath.Ext(r.URL.Path), ".")
+	}
+
 	mediaType := chooseMediaType(ext, supported, content.ParseAccept(accept), cfg.ExtToProposalMap)
 	log.Dev("mediaType %#v", mediaType)
 
@@ -155,49 +158,54 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		if res.TemplateName != "" && cfg.HtmlTemplate != nil {
 			err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Body)
 			if err != nil {
-				return err
+				return fmt.Errorf("Failed to render body HTML template %s: %w", res.TemplateName, err)
 			}
 		} else {
 			_, err := w.Write([]byte(res.Body.(string)))
 			if err != nil {
-				return err
+				return fmt.Errorf("Failed to write string as HTML: %w", err)
 			}
 		}
 	case mPlaintext:
 		log.Dev("Rendering plain text...")
 
-		if cfg.TextTemplate == nil {
-			log.Dev("Writing text directly because there is no TextTemplate...")
-			_, err := w.Write([]byte(res.Body.(string)))
-			if err != nil {
-				return err
-			}
-			break
-		}
-
 		if res.TemplateName != "" {
+			log.Dev("Template name is set, so expecting a template...")
+
 			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
 				log.Dev("Executing TextTemplate...")
 				err := tm.ExecuteTemplate(w, res.TemplateName, res.Body)
 				if err != nil {
-					return err
+					return fmt.Errorf("Failed to render body as text template %s: %w", res.TemplateName, err)
 				}
 				break
 			}
+
+			return fmt.Errorf("TemplateName was set, but there is no TextTemplate to check")
+		}
+		log.Dev("Not using a template because either TextTemplate or TemplateName is not set...")
+
+		if body, ok := res.Body.(string); ok {
+			log.Dev("Can write text directly because it is a string...")
+			_, err := w.Write([]byte(body))
+			if err != nil {
+				return fmt.Errorf("Failed to render body as plain-text string: %w", err)
+			}
+			break
 		}
 
-		return errors.New("Either TextTemplate must not be set or TemplateName must be set to render text")
+		return fmt.Errorf("Trying to render body as %s but this type is not supported for strings: %#v", mPlaintext, res.Body)
 	case mJson:
 		log.Dev("Rendering json...")
 		err := json.NewEncoder(w).Encode(res.Body)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to render body as JSON: %w", err)
 		}
 	case mBytes:
 		log.Dev("Rendering bytes...")
 		_, err := w.Write(res.Body.([]byte))
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to render body as bytes: %w", err)
 		}
 	default:
 		return fmt.Errorf("Unhandled mediaType: %#v", mediaType)
