@@ -19,7 +19,7 @@ type Handler interface {
 ```
 
 ## Features
- - Respects the Accept header and will attempt to provide the data in the supported media-type that is requested.
+ - Content Negotiation. RSVP will attempt to provide the data in a supported media-type that is requested via the Accept header, or even the URL's file extension in the case of GET requests.
    - [x] `application/json`
    - [x] `text/html`
    - [x] `text/plain`
