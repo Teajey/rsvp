@@ -245,9 +245,9 @@ func TestRss(t *testing.T) {
 	}
 
 	res := rsvp.Response{Body: body, TemplateName: "rss.gotmpl"}
-	res.PredetermineType("text/html", "application/rss+xml")
 	req := httptest.NewRequest("GET", "/posts.xml", nil)
 	rec := httptest.NewRecorder()
+	rec.Header().Set("Content-Type", "application/rss+xml")
 
 	cfg := rsvp.DefaultConfig()
 	// This will make sure rsvp uses the text/html rendering scheme which I use as a hack to avoid rendering non-XML. I should probably just use encoding/xml

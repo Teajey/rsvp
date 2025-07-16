@@ -133,13 +133,15 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 
 	var contentType string
 	if res.predeterminedMediaType != "" {
-		// In this case, assuming mediaType == res.PredeterminedMediaType
+		// In this case, assuming mediaType == res.predeterminedMediaType
 		contentType = res.predeterminedContentType
 	} else {
 		contentType = mediaTypeToContentType[mediaType]
 	}
 	log.Dev("Setting content-type to %#v", contentType)
-	h.Set("Content-Type", contentType)
+	if h.Get("Content-Type") == "" {
+		h.Set("Content-Type", contentType)
+	}
 
 	if res.Status != 0 {
 		w.WriteHeader(res.Status)
@@ -261,15 +263,4 @@ func (r *Response) Html(html string) {
 	r.Body = html
 	r.predeterminedMediaType = mHtml
 	r.predeterminedContentType = mediaTypeToContentType[mHtml]
-}
-
-// Override the media type that rsvp will use.
-//
-// Use this with caution.
-//
-// mediaType MUST be set to one of the supportedTypes to determine which rendering mode to use,
-// but contentType may be any valid value of a Content-Type header
-func (r *Response) PredetermineType(mediaType supportedType, contentType string) {
-	r.predeterminedMediaType = mediaType
-	r.predeterminedContentType = contentType
 }
