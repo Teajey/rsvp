@@ -131,15 +131,17 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		return nil
 	}
 
-	var contentType string
-	if res.predeterminedMediaType != "" {
-		// In this case, assuming mediaType == res.predeterminedMediaType
-		contentType = res.predeterminedContentType
-	} else {
-		contentType = mediaTypeToContentType[mediaType]
-	}
-	log.Dev("Setting content-type to %#v", contentType)
-	if h.Get("Content-Type") == "" {
+	contentType := h.Get("Content-Type")
+	if contentType == "" {
+
+		if res.predeterminedMediaType != "" {
+			// In this case, assuming mediaType == res.predeterminedMediaType
+			contentType = res.predeterminedContentType
+		} else {
+			contentType = mediaTypeToContentType[mediaType]
+		}
+
+		log.Dev("Setting content-type to %#v", contentType)
 		h.Set("Content-Type", contentType)
 	}
 
