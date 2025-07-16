@@ -34,8 +34,6 @@ func SeeOther(url string) Response
 
 func (r *Response) Html(html string)
 
-func (r *Response) PredetermineType(mediaType supportedType, contentType string)
-
 func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error
 
 type ServeMux struct {
