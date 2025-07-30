@@ -552,3 +552,29 @@ func TestComplexDataStructuresAreJsonByDefault(t *testing.T) {
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", `["I","am","livid"]`+"\n", s)
 }
+
+func TestFirefoxAcceptHeader(t *testing.T) {
+	body := "Hello <input> World!"
+	res := rsvp.Response{Body: body, TemplateName: "tm"}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	cfg.HtmlTemplate = html.New("")
+	cfg.HtmlTemplate = html.Must(cfg.HtmlTemplate.Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
+	cfg.TextTemplate = text.New("")
+	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
+
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+
+	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "<div>Hello &lt;input&gt; World!</div>", s)
+}

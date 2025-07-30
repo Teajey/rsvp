@@ -10,7 +10,7 @@ import (
 type proposal struct {
 	superType string
 	subType   string
-	Weight    *float32
+	Weight    float32
 	params    map[string][]string
 }
 
@@ -27,15 +27,7 @@ func proposalCmp(a, b proposal) int {
 		return 0
 	}
 
-	if a.Weight == nil && b.Weight != nil {
-		return 1
-	}
-
-	if b.Weight == nil && a.Weight != nil {
-		return -1
-	}
-
-	if a.Weight != nil && b.Weight != nil && *a.Weight < *b.Weight {
+	if a.Weight < b.Weight {
 		return 1
 	}
 
@@ -100,7 +92,7 @@ func ParseProposal(s string) (proposal, error) {
 	proposal := proposal{
 		superType: superType,
 		subType:   subType,
-		Weight:    nil,
+		Weight:    1.,
 	}
 
 	paramsStr, ok := nextElem()
@@ -130,13 +122,13 @@ func ParseProposal(s string) (proposal, error) {
 	switch {
 	case val > 1:
 		f := float32(1.)
-		proposal.Weight = &f
+		proposal.Weight = f
 	case val < 0:
 		f := float32(0.)
-		proposal.Weight = &f
+		proposal.Weight = f
 	default:
 		f := float32(val)
-		proposal.Weight = &f
+		proposal.Weight = f
 	}
 	return proposal, nil
 }
