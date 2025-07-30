@@ -285,12 +285,9 @@ func TestNotFound(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.DefaultConfig()
+	cfg.HtmlTemplate = html.Must(html.New("").Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
 
-	htmlTmpl, err := html.New("").ParseFiles("./internal/fixtures/rss.gotmpl")
-	assert.FatalErr(t, "loading rss template", err)
-	cfg.HtmlTemplate = htmlTmpl
-
-	err = res.Write(rec, req, cfg)
+	err := res.Write(rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -377,12 +374,9 @@ func TestNotFoundJson(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.DefaultConfig()
+	cfg.HtmlTemplate = html.Must(html.New("").Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
 
-	htmlTmpl, err := html.New("").ParseFiles("./internal/fixtures/rss.gotmpl")
-	assert.FatalErr(t, "loading rss template", err)
-	cfg.HtmlTemplate = htmlTmpl
-
-	err = res.Write(rec, req, cfg)
+	err := res.Write(rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
