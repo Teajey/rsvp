@@ -15,6 +15,7 @@ const (
 	mHtml      supportedType = "text/html"
 	mBytes     supportedType = "application/octet-stream"
 	mJson      supportedType = "application/json"
+	mXml       supportedType = "application/xml"
 )
 
 var mediaTypeToContentType = map[supportedType]string{
@@ -22,12 +23,14 @@ var mediaTypeToContentType = map[supportedType]string{
 	mHtml:      "text/html; charset=utf-8",
 	mBytes:     "application/octet-stream",
 	mJson:      "application/json",
+	mXml:       "application/xml",
 }
 
 var defaultExtToProposalMap = map[string]string{
 	"txt":  string(mPlaintext),
 	"html": string(mHtml),
 	"json": string(mJson),
+	"xml":  string(mXml),
 }
 
 // mediatype string m must be well-formed

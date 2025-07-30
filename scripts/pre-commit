@@ -3,7 +3,7 @@
 APISNAP=api.snap.txt
 
 ./scripts/api_snapshot > $APISNAP
-git diff --staged --quiet $APISNAP
+git diff --quiet $APISNAP
 
 if [[ $? -ne 0 ]]; then
   echo "There are unstaged changes to $APISNAP"

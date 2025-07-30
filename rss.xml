@@ -5,7 +5,7 @@
       <description>It&#39;s cool</description>
       <language>en</language>
       <lastBuildDate>April 1st</lastBuildDate>
-      <atom:link href="" rel="self" type="application/rss+xml" />
+      <atom:link href="" rel="self" type="application/rss+xml"></atom:link>
       <item>
          <title>New post</title>
          <description>I got a pet</description>

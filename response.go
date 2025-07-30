@@ -2,6 +2,7 @@ package rsvp
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	html "html/template"
 	"iter"
@@ -52,6 +53,10 @@ func (res *Response) mediaTypes(cfg *Config) iter.Seq[supportedType] {
 			return
 		}
 
+		if !yield(mXml) {
+			return
+		}
+
 		if res.TemplateName != "" {
 			if cfg.HtmlTemplate != nil && cfg.HtmlTemplate.Lookup(res.TemplateName) != nil {
 				if !yield(mHtml) {
@@ -75,13 +80,13 @@ type Config struct {
 	// Controls which file extensions override the Accept header. E.g. "json" will only accept "application/json" by default.
 	//
 	// You might instead set "json" to accept "application/*", or "*/*" (although the latter is the default if "json" weren't set at all)
-	ExtToProposalMap map[string]string
+	extToProposalMap map[string]string
 }
 
 // Sets Config.ExtensionToProposalMap = defaultExtToProposalMap
 func DefaultConfig() *Config {
 	return &Config{
-		ExtToProposalMap: defaultExtToProposalMap,
+		extToProposalMap: defaultExtToProposalMap,
 	}
 }
 
@@ -108,7 +113,7 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		ext = strings.TrimPrefix(filepath.Ext(r.URL.Path), ".")
 	}
 
-	mediaType := chooseMediaType(ext, supported, content.ParseAccept(accept), cfg.ExtToProposalMap)
+	mediaType := chooseMediaType(ext, supported, content.ParseAccept(accept), cfg.extToProposalMap)
 	log.Dev("mediaType %#v", mediaType)
 
 	if mediaType == "" {
@@ -204,6 +209,14 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		err := json.NewEncoder(w).Encode(res.Body)
 		if err != nil {
 			return fmt.Errorf("failed to render body as JSON: %w", err)
+		}
+	case mXml:
+		log.Dev("Rendering xml...")
+		enc := xml.NewEncoder(w)
+		enc.Indent("", "   ")
+		err := enc.Encode(res.Body)
+		if err != nil {
+			return fmt.Errorf("failed to render body as XML: %w", err)
 		}
 	case mBytes:
 		log.Dev("Rendering bytes...")
