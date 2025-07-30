@@ -11,21 +11,21 @@ func TestParseProposalHtml(t *testing.T) {
 	proposal, err := content.ParseProposal("text/html")
 	assert.FatalErr(t, "Parsing proposal", err)
 	assert.Eq(t, "MediaType value", proposal.MediaType(), "text/html")
-	assert.Eq(t, "Weight value", proposal.Weight, nil)
+	assert.Eq(t, "Weight value", proposal.Weight, 1.)
 }
 
 func TestParseProposalHtmlWeighted(t *testing.T) {
 	proposal, err := content.ParseProposal("text/html;q=0.8")
 	assert.FatalErr(t, "Parsing proposal", err)
 	assert.Eq(t, "MediaType value", proposal.MediaType(), "text/html")
-	assert.Eq(t, "Weight value", *proposal.Weight, 0.8)
+	assert.Eq(t, "Weight value", proposal.Weight, 0.8)
 }
 
 func TestParseProposalHtmlWeirdSpacing(t *testing.T) {
 	proposal, err := content.ParseProposal(" text / html ; q = 0.8 ")
 	assert.FatalErr(t, "Parsing proposal", err)
 	assert.Eq(t, "MediaType value", proposal.MediaType(), "text/html")
-	assert.Eq(t, "Weight value", *proposal.Weight, 0.8)
+	assert.Eq(t, "Weight value", proposal.Weight, 0.8)
 }
 
 func TestParseProposalEmpty(t *testing.T) {
@@ -47,7 +47,7 @@ func TestParseProposalBadWeightPrefix(t *testing.T) {
 	proposal, err := content.ParseProposal("text/html;w=0.8")
 	assert.FatalErr(t, "Parsing proposal", err)
 	assert.Eq(t, "MediaType value", proposal.MediaType(), "text/html")
-	assert.Eq(t, "Weight value", proposal.Weight, nil)
+	assert.Eq(t, "Weight value", proposal.Weight, 1.)
 }
 
 func TestParseProposalBadWeightFloat(t *testing.T) {
@@ -66,7 +66,7 @@ func TestParseProposalWild(t *testing.T) {
 	proposal, err := content.ParseProposal("*/*;q=0.8")
 	assert.FatalErr(t, "Parsing proposal", err)
 	assert.Eq(t, "MediaType value", proposal.MediaType(), "*/*")
-	assert.Eq(t, "Weight value", *proposal.Weight, 0.8)
+	assert.Eq(t, "Weight value", proposal.Weight, 0.8)
 }
 
 func TestParseProposalWildSuper(t *testing.T) {
@@ -78,19 +78,19 @@ func TestParseProposalWildSub(t *testing.T) {
 	proposal, err := content.ParseProposal("text/*;q=0.8")
 	assert.FatalErr(t, "Parsing proposal", err)
 	assert.Eq(t, "MediaType value", proposal.MediaType(), "text/*")
-	assert.Eq(t, "Weight value", *proposal.Weight, 0.8)
+	assert.Eq(t, "Weight value", proposal.Weight, 0.8)
 }
 
 func TestParseProposalOverWeighted(t *testing.T) {
 	proposal, err := content.ParseProposal("text/html;q=1.1")
 	assert.FatalErr(t, "Parsing proposal", err)
 	assert.Eq(t, "MediaType value", proposal.MediaType(), "text/html")
-	assert.Eq(t, "Weight value", *proposal.Weight, 1)
+	assert.Eq(t, "Weight value", proposal.Weight, 1)
 }
 
 func TestParseProposalUnderWeighted(t *testing.T) {
 	proposal, err := content.ParseProposal("text/html;q=-0.1")
 	assert.FatalErr(t, "Parsing proposal", err)
 	assert.Eq(t, "MediaType value", proposal.MediaType(), "text/html")
-	assert.Eq(t, "Weight value", *proposal.Weight, 0)
+	assert.Eq(t, "Weight value", proposal.Weight, 0)
 }
