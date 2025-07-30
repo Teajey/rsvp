@@ -6,7 +6,7 @@ TYPES
 type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
-	ExtToProposalMap map[string]string
+	// Has unexported fields.
 }
 
 func DefaultConfig() *Config

@@ -24,7 +24,7 @@ type Handler interface {
    - [x] `text/html`
    - [x] `text/plain`
    - [x] `application/octet-stream`
-   - [ ] `application/xml`
+   - [x] `application/xml`
    - [ ] `application/vnd.msgpack` (optional)
    - [ ] Other?
 
