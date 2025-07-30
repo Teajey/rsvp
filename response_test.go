@@ -116,7 +116,7 @@ func TestListBody(t *testing.T) {
 }
 
 func TestBytesBody(t *testing.T) {
-	body := []byte("Hello, World!")
+	body := []byte{0x29, 0x46, 0x4c, 0xff, 0x2f, 0x0e, 0x62, 0x41, 0xb5, 0xe3, 0xbb, 0xff, 0x06, 0x89, 0xa2, 0xef, 0xf0, 0xe2, 0x90, 0x4b, 0x62, 0x93, 0xa2, 0x6c, 0xc9, 0xcf, 0x08, 0xae, 0x18, 0xb0, 0xc2, 0xfc}
 	res := rsvp.Response{Body: body}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "application/*")
@@ -131,14 +131,15 @@ func TestBytesBody(t *testing.T) {
 
 	assert.Eq(t, "Content type", "application/octet-stream", resp.Header.Get("Content-Type"))
 
-	s := rec.Body.String()
-	assert.Eq(t, "body contents", "Hello, World!", s)
+	s := rec.Body.Bytes()
+	assert.SlicesEq(t, "body contents", body, s)
 }
 
 func TestHtmlTemplate(t *testing.T) {
 	body := "Hello <input> World!"
 	res := rsvp.Response{Body: body, TemplateName: "tm"}
 	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "text/html")
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.DefaultConfig()
@@ -499,4 +500,55 @@ func TestPutWithOkResponse(t *testing.T) {
 	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
+}
+
+func TestRequestUnknownFormat(t *testing.T) {
+	body := "Hello <input> World!"
+	res := rsvp.Response{Body: body, TemplateName: "tm"}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "unknown/unknown")
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	cfg.HtmlTemplate = html.New("")
+	cfg.HtmlTemplate = html.Must(cfg.HtmlTemplate.Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
+	cfg.TextTemplate = text.New("")
+	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
+
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 406, statusCode)
+
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
+}
+
+func TestComplexDataStructuresAreJsonByDefault(t *testing.T) {
+	body := []string{"I", "am", "livid"}
+	res := rsvp.Response{Body: body, TemplateName: "tm"}
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	cfg.HtmlTemplate = html.New("")
+	cfg.HtmlTemplate = html.Must(cfg.HtmlTemplate.Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
+	cfg.TextTemplate = text.New("")
+	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
+
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", `["I","am","livid"]`+"\n", s)
 }

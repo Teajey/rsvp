@@ -38,20 +38,6 @@ func (res *Response) mediaTypes(cfg *Config) iter.Seq[supportedType] {
 			return
 		}
 
-		if res.TemplateName != "" {
-			if cfg.HtmlTemplate != nil && cfg.HtmlTemplate.Lookup(res.TemplateName) != nil {
-				if !yield(mHtml) {
-					return
-				}
-			}
-
-			if cfg.TextTemplate != nil && cfg.TextTemplate.Lookup(res.TemplateName) != nil {
-				if !yield(mPlaintext) {
-					return
-				}
-			}
-		}
-
 		switch res.Body.(type) {
 		case string:
 			if !yield(mPlaintext) {
@@ -64,6 +50,20 @@ func (res *Response) mediaTypes(cfg *Config) iter.Seq[supportedType] {
 
 		if !yield(mJson) {
 			return
+		}
+
+		if res.TemplateName != "" {
+			if cfg.HtmlTemplate != nil && cfg.HtmlTemplate.Lookup(res.TemplateName) != nil {
+				if !yield(mHtml) {
+					return
+				}
+			}
+
+			if cfg.TextTemplate != nil && cfg.TextTemplate.Lookup(res.TemplateName) != nil {
+				if !yield(mPlaintext) {
+					return
+				}
+			}
 		}
 	}
 }
