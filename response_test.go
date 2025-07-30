@@ -271,23 +271,7 @@ func TestRss(t *testing.T) {
 	assert.Eq(t, "Content type", "application/rss+xml", resp.Header.Get("Content-Type"))
 
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", `<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-   <channel>
-      <title>My stuff</title>
-      <link></link>
-      <description>It&#39;s cool</description>
-      <language>en</language>
-      <lastBuildDate>April 1st</lastBuildDate>
-      <atom:link href="" rel="self" type="application/rss+xml" />
-      <item>
-         <title>New post</title>
-         <description>I got a pet</description>
-         <pubDate>April 1st</pubDate>
-         <guid>123</guid>
-      </item>
-   </channel>
-</rss>
-`, s)
+	assert.TextSnapshot(t, "rss.xml", s)
 }
 
 func TestNotFound(t *testing.T) {
