@@ -17,8 +17,8 @@ import (
 )
 
 type Response struct {
-	// Beware that the default value of nil will likely render as JSON "null\n" rather
-	// than the expected empty body. Set Body to "" to avoid this.
+	// Beware that the default value of nil will render as application/json "null\n" rather
+	// than the expected empty body. Set Body to "" to return a blank response
 	Body         any
 	TemplateName string
 	Status       int
@@ -26,9 +26,15 @@ type Response struct {
 	predeterminedMediaType   supportedType
 	predeterminedContentType string
 
+	blankBodyOverride bool
+
 	seeOther          string
 	movedPermanently  string
 	permanentRedirect string
+}
+
+func (res *Response) isBlank() bool {
+	return res.Body == nil && res.blankBodyOverride
 }
 
 func (res *Response) mediaTypes(cfg *Config) iter.Seq[supportedType] {
@@ -105,6 +111,16 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 
 	accept := r.Header.Get("Accept")
 
+	contentType := h.Get("Content-Type")
+	if contentType != "" {
+		aMediaType := supportedType(contentTypeExtractMediaType(contentType))
+		_, ok := mediaTypeToContentType[aMediaType]
+		if ok {
+			res.predeterminedMediaType = aMediaType
+			log.Dev("Content-Type is set to a recognised type, so predeterminedMediaType set to %#v", res.predeterminedMediaType)
+		}
+	}
+
 	supported := slices.Collect(res.mediaTypes(cfg))
 	log.Dev("supported %v", supported)
 
@@ -131,14 +147,19 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		return nil
 	}
 
-	if res.Body == nil {
-		log.Dev("Early returning because body is nil")
+	// If the client's getting HTML they're probably using a browser which will
+	// automatically follow this SeeOther. We shouldn't bother rendering anything.
+	if res.seeOther != "" && (mediaType == "text/html" || res.isBlank()) {
+		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
 		return nil
 	}
 
-	contentType := h.Get("Content-Type")
-	if contentType == "" {
+	if res.isBlank() {
+		log.Dev("Early returning because body is empty")
+		return nil
+	}
 
+	if contentType == "" {
 		if res.predeterminedMediaType != "" {
 			// In this case, assuming mediaType == res.predeterminedMediaType
 			contentType = res.predeterminedContentType
@@ -152,13 +173,6 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 
 	if res.Status != 0 {
 		w.WriteHeader(res.Status)
-	}
-
-	// If the client's getting HTML they're probably using a browser which will
-	// automatically follow this SeeOther. We shouldn't bother rendering anything.
-	if res.seeOther != "" && mediaType == "text/html" {
-		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
-		return nil
 	}
 
 	switch mediaType {
@@ -248,7 +262,8 @@ func SeeOther(url string) Response {
 
 		// Status must be set here otherwise any writes
 		// to http.ResponseWriter will beat us to the punch
-		Status: http.StatusSeeOther,
+		Status:            http.StatusSeeOther,
+		blankBodyOverride: true,
 	}
 }
 
@@ -266,9 +281,9 @@ func PermanentRedirect(url string) Response {
 	return Response{permanentRedirect: url}
 }
 
-// Short-hand for returning rsvp.Response{} which is equivalent to a blank 200 OK response
+// Returns a blank 200 OK response
 func Ok() Response {
-	return Response{}
+	return Response{blankBodyOverride: true}
 }
 
 // Set body to html using a string, making sure "Content-Type: text/html; charset=utf-8" is set.

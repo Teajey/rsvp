@@ -19,6 +19,7 @@ const (
 )
 
 var mediaTypeToContentType = map[supportedType]string{
+	// TODO: Why did I insist on specifying utf-8 here? There should be note. I think it might just be because it's inline with what net/http does
 	mPlaintext: "text/plain; charset=utf-8",
 	mHtml:      "text/html; charset=utf-8",
 	mBytes:     "application/octet-stream",
@@ -29,6 +30,7 @@ var mediaTypeToContentType = map[supportedType]string{
 var defaultExtToProposalMap = map[string]string{
 	"txt":  string(mPlaintext),
 	"html": string(mHtml),
+	"htm":  string(mHtml),
 	"json": string(mJson),
 	"xml":  string(mXml),
 }
@@ -60,9 +62,9 @@ func chooseMediaType(ext string, supported []supportedType, accept iter.Seq[stri
 	if ext != "" {
 		log.Dev("Checking extension: %#v", ext)
 		if a, ok := ext2proposal[ext]; ok {
-			log.Dev("a %#v", a)
+			log.Dev("proposing %#v", a)
 			for _, s := range supported {
-				log.Dev("s %#v", s)
+				log.Dev("offering  %#v", s)
 				if mediaTypesEqual(s, a) {
 					return s
 				}
@@ -73,9 +75,9 @@ func chooseMediaType(ext string, supported []supportedType, accept iter.Seq[stri
 
 	log.Dev("Checking accept header")
 	for a := range accept {
-		log.Dev("a %#v", a)
+		log.Dev("proposing %#v", a)
 		for _, s := range supported {
-			log.Dev("s %#v", s)
+			log.Dev("offering  %#v", s)
 			if mediaTypesEqual(s, a) {
 				return s
 			}
