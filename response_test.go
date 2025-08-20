@@ -354,8 +354,7 @@ func TestNilBody(t *testing.T) {
 }
 
 func TestSeeOtherCanRender(t *testing.T) {
-	res := rsvp.SeeOther("/")
-	res.Body = "POST successful"
+	res := rsvp.SeeOther("/", "POST successful")
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
@@ -366,12 +365,13 @@ func TestSeeOtherCanRender(t *testing.T) {
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", res.Body.(string), s)
 }
 
 func TestSeeOtherDoesNotRenderHtml(t *testing.T) {
-	res := rsvp.SeeOther("/")
+	res := rsvp.SeeOther("/", nil)
 	res.Html("<div></div>")
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
@@ -383,6 +383,7 @@ func TestSeeOtherDoesNotRenderHtml(t *testing.T) {
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
 	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
 }
@@ -400,6 +401,7 @@ func TestPermanentRedirectDoesNotRender(t *testing.T) {
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusPermanentRedirect, statusCode)
 	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
 }
@@ -597,7 +599,7 @@ func TestFirefoxAcceptHeader(t *testing.T) {
 }
 
 func TestSeeOtherBlank(t *testing.T) {
-	res := rsvp.SeeOther("/")
+	res := rsvp.SeeOther("/", nil)
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
@@ -608,6 +610,7 @@ func TestSeeOtherBlank(t *testing.T) {
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
 	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", "", body)
 }

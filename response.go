@@ -171,6 +171,10 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		h.Set("Content-Type", contentType)
 	}
 
+	if res.seeOther != "" {
+		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
+	}
+
 	if res.Status != 0 {
 		w.WriteHeader(res.Status)
 	}
@@ -242,11 +246,6 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		return fmt.Errorf("unhandled mediaType: %#v", mediaType)
 	}
 
-	if res.seeOther != "" {
-		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
-		return nil
-	}
-
 	return nil
 }
 
@@ -256,14 +255,12 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 // this case. For instance, if the request was a JSON PUT from
 // the commandline it's helpful to see the result without having
 // to manually follow the Location header.
-func SeeOther(url string) Response {
+func SeeOther(url string, body any) Response {
 	return Response{
+		Body:     body,
 		seeOther: url,
 
-		// Status must be set here otherwise any writes
-		// to http.ResponseWriter will beat us to the punch
-		Status:            http.StatusSeeOther,
-		blankBodyOverride: true,
+		blankBodyOverride: body == nil,
 	}
 }
 

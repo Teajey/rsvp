@@ -30,7 +30,7 @@ func Ok() Response
 
 func PermanentRedirect(url string) Response
 
-func SeeOther(url string) Response
+func SeeOther(url string, body any) Response
 
 func (r *Response) Html(html string)
 
