@@ -281,7 +281,7 @@ func PermanentRedirect(url string) Response {
 	return Response{permanentRedirect: url}
 }
 
-// Short-hand for returning rsvp.Response{""} which is equivalent to a blank 200 OK response
+// Returns a blank 200 OK response
 func Ok() Response {
 	return Response{blankBodyOverride: true}
 }

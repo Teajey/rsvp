@@ -25,6 +25,7 @@ type Handler interface {
    - [x] `text/plain`
    - [x] `application/octet-stream`
    - [x] `application/xml`
+   - [ ] `application/x.gob` (encoding/gob (is there a more appropriate MIME type for this?))
    - [ ] `application/vnd.msgpack` (optional)
    - [ ] Other?
 
