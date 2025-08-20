@@ -345,8 +345,7 @@ func TestSeeOtherDoesNotRenderHtml(t *testing.T) {
 	resp := rec.Result()
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
-	// FIXME: Doesn't seem like Content-Type should be set here
-	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
 }
@@ -558,4 +557,20 @@ func TestFirefoxAcceptHeader(t *testing.T) {
 
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "<div>Hello &lt;input&gt; World!</div>", s)
+}
+
+func TestSeeOtherBlank(t *testing.T) {
+	res := rsvp.SeeOther("/")
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", body, "")
 }

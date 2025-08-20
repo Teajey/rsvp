@@ -17,8 +17,8 @@ import (
 )
 
 type Response struct {
-	// Beware that the default value of nil will likely render as JSON "null\n" rather
-	// than the expected empty body. Set Body to "" to avoid this.
+	// Beware that the default value of nil will render as application/json "null\n" rather
+	// than the expected empty body. Set Body to "" to return a blank response with no Content-Type
 	Body         any
 	TemplateName string
 	Status       int
@@ -131,8 +131,15 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		return nil
 	}
 
-	if res.Body == nil {
-		log.Dev("Early returning because body is nil")
+	// If the client's getting HTML they're probably using a browser which will
+	// automatically follow this SeeOther. We shouldn't bother rendering anything.
+	if res.seeOther != "" && (mediaType == "text/html" || res.Body == "") {
+		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
+		return nil
+	}
+
+	if res.Body == "" {
+		log.Dev("Early returning because body is empty")
 		return nil
 	}
 
@@ -152,13 +159,6 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 
 	if res.Status != 0 {
 		w.WriteHeader(res.Status)
-	}
-
-	// If the client's getting HTML they're probably using a browser which will
-	// automatically follow this SeeOther. We shouldn't bother rendering anything.
-	if res.seeOther != "" && mediaType == "text/html" {
-		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
-		return nil
 	}
 
 	switch mediaType {
@@ -249,6 +249,7 @@ func SeeOther(url string) Response {
 		// Status must be set here otherwise any writes
 		// to http.ResponseWriter will beat us to the punch
 		Status: http.StatusSeeOther,
+		Body:   "",
 	}
 }
 
@@ -266,9 +267,9 @@ func PermanentRedirect(url string) Response {
 	return Response{permanentRedirect: url}
 }
 
-// Short-hand for returning rsvp.Response{} which is equivalent to a blank 200 OK response
+// Short-hand for returning rsvp.Response{""} which is equivalent to a blank 200 OK response
 func Ok() Response {
-	return Response{}
+	return Response{Body: ""}
 }
 
 // Set body to html using a string, making sure "Content-Type: text/html; charset=utf-8" is set.
