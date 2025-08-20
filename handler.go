@@ -30,8 +30,19 @@ type HandlerFunc func(h http.Header, r *http.Request) Response
 
 // Uses the same pattern syntax as http.ServeMux
 func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc) {
-	m.Std.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+	m.MiddleHandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) Response {
 		response := handler(w.Header(), r)
+
+		return response
+	})
+}
+
+// Register an RSVP handler with access to http.ResponseWriter
+//
+// The intention is to make adapting net/http middleware to RSVP easier
+func (m *ServeMux) MiddleHandleFunc(pattern string, handler func(h http.ResponseWriter, r *http.Request) Response) {
+	m.Std.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		response := handler(w, r)
 
 		err := response.Write(w, r, m.Config)
 		if err != nil {
