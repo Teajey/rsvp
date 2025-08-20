@@ -26,9 +26,15 @@ type Response struct {
 	predeterminedMediaType   supportedType
 	predeterminedContentType string
 
+	blankBodyOverride bool
+
 	seeOther          string
 	movedPermanently  string
 	permanentRedirect string
+}
+
+func (res *Response) isBlank() bool {
+	return res.Body == nil && res.blankBodyOverride
 }
 
 func (res *Response) mediaTypes(cfg *Config) iter.Seq[supportedType] {
@@ -133,12 +139,12 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 
 	// If the client's getting HTML they're probably using a browser which will
 	// automatically follow this SeeOther. We shouldn't bother rendering anything.
-	if res.seeOther != "" && (mediaType == "text/html" || res.Body == "") {
+	if res.seeOther != "" && (mediaType == "text/html" || res.isBlank()) {
 		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
 		return nil
 	}
 
-	if res.Body == "" {
+	if res.isBlank() {
 		log.Dev("Early returning because body is empty")
 		return nil
 	}
@@ -248,8 +254,8 @@ func SeeOther(url string) Response {
 
 		// Status must be set here otherwise any writes
 		// to http.ResponseWriter will beat us to the punch
-		Status: http.StatusSeeOther,
-		Body:   "",
+		Status:            http.StatusSeeOther,
+		blankBodyOverride: true,
 	}
 }
 
@@ -269,7 +275,7 @@ func PermanentRedirect(url string) Response {
 
 // Short-hand for returning rsvp.Response{""} which is equivalent to a blank 200 OK response
 func Ok() Response {
-	return Response{Body: ""}
+	return Response{blankBodyOverride: true}
 }
 
 // Set body to html using a string, making sure "Content-Type: text/html; charset=utf-8" is set.

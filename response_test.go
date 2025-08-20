@@ -572,5 +572,73 @@ func TestSeeOtherBlank(t *testing.T) {
 	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
 	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
-	assert.Eq(t, "body contents", body, "")
+	assert.Eq(t, "body contents", "", body)
+}
+
+func TestRequestJsonEmptyString(t *testing.T) {
+	res := rsvp.Response{Body: ""}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "application/json")
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", `""`+"\n", body)
+}
+
+func TestRequestJsonNull(t *testing.T) {
+	res := rsvp.Response{Body: nil}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "application/json")
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", "null\n", body)
+}
+
+func TestRespondJsonEmptyString(t *testing.T) {
+	res := rsvp.Response{Body: ""}
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+	rec.Header().Set("Content-Type", "application/json")
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", `""`+"\n", body)
+}
+
+func TestRespondJsonNull(t *testing.T) {
+	res := rsvp.Response{Body: nil}
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+	rec.Header().Set("Content-Type", "application/json")
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", "null\n", body)
 }

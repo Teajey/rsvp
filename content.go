@@ -61,9 +61,9 @@ func chooseMediaType(ext string, supported []supportedType, accept iter.Seq[stri
 	if ext != "" {
 		log.Dev("Checking extension: %#v", ext)
 		if a, ok := ext2proposal[ext]; ok {
-			log.Dev("a %#v", a)
+			log.Dev("proposing %#v", a)
 			for _, s := range supported {
-				log.Dev("s %#v", s)
+				log.Dev("offering  %#v", s)
 				if mediaTypesEqual(s, a) {
 					return s
 				}
@@ -74,9 +74,9 @@ func chooseMediaType(ext string, supported []supportedType, accept iter.Seq[stri
 
 	log.Dev("Checking accept header")
 	for a := range accept {
-		log.Dev("a %#v", a)
+		log.Dev("proposing %#v", a)
 		for _, s := range supported {
-			log.Dev("s %#v", s)
+			log.Dev("offering  %#v", s)
 			if mediaTypesEqual(s, a) {
 				return s
 			}
