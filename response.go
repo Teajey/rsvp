@@ -18,7 +18,7 @@ import (
 
 type Response struct {
 	// Beware that the default value of nil will render as application/json "null\n" rather
-	// than the expected empty body. Set Body to "" to return a blank response with no Content-Type
+	// than the expected empty body. Set Body to "" to return a blank response
 	Body         any
 	TemplateName string
 	Status       int

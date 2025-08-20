@@ -19,6 +19,7 @@ const (
 )
 
 var mediaTypeToContentType = map[supportedType]string{
+	// TODO: Why did I insist on specifying utf-8 here? There should be note. I think it might just be because it's inline with what net/http does
 	mPlaintext: "text/plain; charset=utf-8",
 	mHtml:      "text/html; charset=utf-8",
 	mBytes:     "application/octet-stream",
