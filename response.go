@@ -111,6 +111,16 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 
 	accept := r.Header.Get("Accept")
 
+	contentType := h.Get("Content-Type")
+	if contentType != "" {
+		aMediaType := supportedType(contentTypeExtractMediaType(contentType))
+		_, ok := mediaTypeToContentType[aMediaType]
+		if ok {
+			res.predeterminedMediaType = aMediaType
+			log.Dev("Content-Type is set to a recognised type, so predeterminedMediaType set to %#v", res.predeterminedMediaType)
+		}
+	}
+
 	supported := slices.Collect(res.mediaTypes(cfg))
 	log.Dev("supported %v", supported)
 
@@ -149,9 +159,7 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		return nil
 	}
 
-	contentType := h.Get("Content-Type")
 	if contentType == "" {
-
 		if res.predeterminedMediaType != "" {
 			// In this case, assuming mediaType == res.predeterminedMediaType
 			contentType = res.predeterminedContentType

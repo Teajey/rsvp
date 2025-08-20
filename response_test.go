@@ -642,3 +642,89 @@ func TestRespondJsonNull(t *testing.T) {
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", "null\n", body)
 }
+
+func TestRequestXmlEmptyString(t *testing.T) {
+	res := rsvp.Response{Body: ""}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "application/xml")
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "application/xml", resp.Header.Get("Content-Type"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", "<string></string>", body)
+}
+
+func TestRequestXmlNull(t *testing.T) {
+	res := rsvp.Response{Body: nil}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "application/xml")
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "application/xml", resp.Header.Get("Content-Type"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", "", body)
+}
+
+func TestRespondXmlEmptyString(t *testing.T) {
+	res := rsvp.Response{Body: ""}
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+	rec.Header().Set("Content-Type", "application/xml")
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "application/xml", resp.Header.Get("Content-Type"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", "<string></string>", body)
+}
+
+func TestRespondXmlNull(t *testing.T) {
+	res := rsvp.Response{Body: nil}
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+	rec.Header().Set("Content-Type", "application/xml")
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "application/xml", resp.Header.Get("Content-Type"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", "", body)
+}
+
+func TestRequestForXmlButServingJson(t *testing.T) {
+	res := rsvp.Response{Body: nil}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "application/xml")
+	rec := httptest.NewRecorder()
+	rec.Header().Set("Content-Type", "application/json")
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 406, statusCode)
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", "", body)
+}
