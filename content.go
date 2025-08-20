@@ -29,6 +29,7 @@ var mediaTypeToContentType = map[supportedType]string{
 var defaultExtToProposalMap = map[string]string{
 	"txt":  string(mPlaintext),
 	"html": string(mHtml),
+	"htm":  string(mHtml),
 	"json": string(mJson),
 	"xml":  string(mXml),
 }
