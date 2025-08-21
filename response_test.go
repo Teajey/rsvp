@@ -388,6 +388,41 @@ func TestSeeOtherDoesNotRenderHtml(t *testing.T) {
 	assert.Eq(t, "body contents", "", s)
 }
 
+func TestFoundCanRender(t *testing.T) {
+	res := rsvp.Found("/", "POST successful")
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusFound, statusCode)
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", res.Body.(string), s)
+}
+
+func TestFoundDoesNotRenderHtml(t *testing.T) {
+	res := rsvp.Found("/", nil)
+	res.Html("<div></div>")
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusFound, statusCode)
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
+}
+
 func TestPermanentRedirectDoesNotRender(t *testing.T) {
 	res := rsvp.PermanentRedirect("/")
 	res.Body = "POST successful"
@@ -609,6 +644,23 @@ func TestSeeOtherBlank(t *testing.T) {
 	resp := rec.Result()
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", "", body)
+}
+
+func TestFoundBlank(t *testing.T) {
+	res := rsvp.Found("/", nil)
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusFound, statusCode)
 	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
 	body := rec.Body.String()

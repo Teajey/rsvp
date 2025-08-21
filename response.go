@@ -28,6 +28,7 @@ type Response struct {
 
 	blankBodyOverride bool
 
+	found             string
 	seeOther          string
 	movedPermanently  string
 	permanentRedirect string
@@ -152,6 +153,9 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 	if res.seeOther != "" && (mediaType == "text/html" || res.isBlank()) {
 		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
 		return nil
+	} else if res.found != "" && (mediaType == "text/html" || res.isBlank()) {
+		http.Redirect(w, r, res.found, http.StatusFound)
+		return nil
 	}
 
 	if res.isBlank() {
@@ -173,6 +177,8 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 
 	if res.seeOther != "" {
 		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
+	} else if res.found != "" {
+		http.Redirect(w, r, res.found, http.StatusFound)
 	}
 
 	if res.Status != 0 {
@@ -259,6 +265,15 @@ func SeeOther(url string, body any) Response {
 	return Response{
 		Body:     body,
 		seeOther: url,
+
+		blankBodyOverride: body == nil,
+	}
+}
+
+func Found(url string, body any) Response {
+	return Response{
+		Body:  body,
+		found: url,
 
 		blankBodyOverride: body == nil,
 	}
