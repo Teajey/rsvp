@@ -2,7 +2,6 @@ package content_test
 
 import (
 	"fmt"
-	"log"
 	"slices"
 	"testing"
 
@@ -21,7 +20,6 @@ func TestParseAccept(t *testing.T) {
 		"application/json",
 	}
 	assert.Eq(t, "Expected length", 6, len(mediaTypes))
-	log.Printf("mediaTypes: %v", mediaTypes)
 	for i := range mediaTypes {
 		assert.Eq(t, fmt.Sprintf("Index %d", i), expected[i], mediaTypes[i])
 	}
