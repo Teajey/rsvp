@@ -441,6 +441,24 @@ func TestPermanentRedirectDoesNotRender(t *testing.T) {
 	assert.Eq(t, "body contents", "", s)
 }
 
+func TestMovedPermanentlyDoesNotRender(t *testing.T) {
+	res := rsvp.MovedPermanently("/")
+	res.Body = "POST successful"
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusMovedPermanently, statusCode)
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
+}
+
 func TestNotFoundJson(t *testing.T) {
 	res := rsvp.Response{Body: "404 Not Found", Status: http.StatusNotFound}
 	req := httptest.NewRequest("GET", "/post.json", nil)
