@@ -1,6 +1,7 @@
 package rsvp
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -65,6 +66,10 @@ func (res *Response) mediaTypes(cfg *Config) iter.Seq[supportedType] {
 		}
 
 		if !yield(mXml) {
+			return
+		}
+
+		if !yield(mGob) {
 			return
 		}
 
@@ -263,6 +268,12 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		_, err := w.Write(res.Body.([]byte))
 		if err != nil {
 			return fmt.Errorf("failed to render body as bytes: %w", err)
+		}
+	case mGob:
+		log.Dev("Rendering gob...")
+		err := gob.NewEncoder(w).Encode(res.Body)
+		if err != nil {
+			return fmt.Errorf("failed to render body as encoding/gob: %w", err)
 		}
 	default:
 		for _, handler := range mediaTypeExtensionHandlers {
