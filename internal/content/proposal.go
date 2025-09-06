@@ -50,17 +50,17 @@ func proposalCmp(a, b proposal) int {
 	return -1
 }
 
-var ErrorProposalEmpty = errors.New("Empty media-type")
-var ErrorProposalEmptySuper = errors.New("Empty media supertype, i.e. <supertype>/<subtype>")
-var ErrorProposalEmptySub = errors.New("Empty media subtype, i.e. <supertype>/<subtype>")
-var ErrorProposalWildSuper = errors.New("Supertype may not be wild on it's own, i.e. */<subtype>")
+var ErrorProposalEmpty = errors.New("empty media-type")
+var ErrorProposalEmptySuper = errors.New("empty media supertype, i.e. <supertype>/<subtype>")
+var ErrorProposalEmptySub = errors.New("empty media subtype, i.e. <supertype>/<subtype>")
+var ErrorProposalWildSuper = errors.New("supertype may not be wild on it's own, i.e. */<subtype>")
 
 type ErrorProposalBadWeightFloat struct {
 	Err error
 }
 
 func (e ErrorProposalBadWeightFloat) Error() string {
-	return fmt.Sprintf("Couldn't parse weight as float32: %s", e.Err)
+	return fmt.Sprintf("couldn't parse weight as float32: %s", e.Err)
 }
 
 func (e ErrorProposalBadWeightFloat) Unwrap() error {
@@ -111,7 +111,7 @@ func ParseProposal(s string) (proposal, error) {
 	weighting := weightings[0]
 
 	if len(weighting) > 4 {
-		return proposal, ErrorProposalBadWeightFloat{errors.New("Weight is unlikely to be valid because it contains more than 4 characters")}
+		return proposal, ErrorProposalBadWeightFloat{errors.New("weight is unlikely to be valid because it contains more than 4 characters")}
 	}
 
 	val, err := strconv.ParseFloat(weighting, 32)

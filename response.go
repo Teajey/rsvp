@@ -1,6 +1,7 @@
 package rsvp
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -18,7 +19,9 @@ import (
 
 type Response struct {
 	// Beware that the default value of nil will render as application/json "null\n" rather
-	// than the expected empty body. Set Body to "" to return a blank response
+	// than the expected empty body. Set Body to "" to return a blank response.
+	//
+	// See the tests TestNilBody and TestEmptyStringBody in response_test.go.
 	Body         any
 	TemplateName string
 	Status       int
@@ -37,6 +40,8 @@ type Response struct {
 func (res *Response) isBlank() bool {
 	return res.Body == nil && res.blankBodyOverride
 }
+
+var extendedMediaTypes []supportedType = nil
 
 func (res *Response) mediaTypes(cfg *Config) iter.Seq[supportedType] {
 	return func(yield func(supportedType) bool) {
@@ -62,6 +67,16 @@ func (res *Response) mediaTypes(cfg *Config) iter.Seq[supportedType] {
 
 		if !yield(mXml) {
 			return
+		}
+
+		if !yield(mGob) {
+			return
+		}
+
+		for _, mediaType := range extendedMediaTypes {
+			if !yield(mediaType) {
+				return
+			}
 		}
 
 		if res.TemplateName != "" {
@@ -97,7 +112,13 @@ func DefaultConfig() *Config {
 	}
 }
 
+type mediaTypeExtensionHandler = func(mediaType supportedType, w http.ResponseWriter, res *Response) (bool, error)
+
+var mediaTypeExtensionHandlers []mediaTypeExtensionHandler = nil
+
 func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error {
+	log.Dev("config: %#v", cfg)
+
 	if res.movedPermanently != "" {
 		http.Redirect(w, r, res.movedPermanently, http.StatusMovedPermanently)
 		return nil
@@ -248,7 +269,22 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		if err != nil {
 			return fmt.Errorf("failed to render body as bytes: %w", err)
 		}
+	case mGob:
+		log.Dev("Rendering gob...")
+		err := gob.NewEncoder(w).Encode(res.Body)
+		if err != nil {
+			return fmt.Errorf("failed to render body as encoding/gob: %w", err)
+		}
 	default:
+		for _, handler := range mediaTypeExtensionHandlers {
+			matched, err := handler(mediaType, w, res)
+			if err != nil {
+				return fmt.Errorf("an extension handler failed: %w", err)
+			}
+			if matched {
+				return nil
+			}
+		}
 		return fmt.Errorf("unhandled mediaType: %#v", mediaType)
 	}
 

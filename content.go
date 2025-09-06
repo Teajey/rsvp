@@ -16,6 +16,7 @@ const (
 	mBytes     supportedType = "application/octet-stream"
 	mJson      supportedType = "application/json"
 	mXml       supportedType = "application/xml"
+	mGob       supportedType = "application/vnd.golang.gob"
 )
 
 var mediaTypeToContentType = map[supportedType]string{
@@ -25,6 +26,7 @@ var mediaTypeToContentType = map[supportedType]string{
 	mBytes:     "application/octet-stream",
 	mJson:      "application/json",
 	mXml:       "application/xml",
+	mGob:       "application/vnd.golang.gob",
 }
 
 var defaultExtToProposalMap = map[string]string{
@@ -33,6 +35,8 @@ var defaultExtToProposalMap = map[string]string{
 	"htm":  string(mHtml),
 	"json": string(mJson),
 	"xml":  string(mXml),
+	"bin":  string(mBytes),
+	"gob":  string(mGob),
 }
 
 // mediatype string m must be well-formed

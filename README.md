@@ -19,15 +19,15 @@ type Handler interface {
 ```
 
 ## Features
- - Content Negotiation. RSVP will attempt to provide the data in a supported media-type that is requested via the Accept header, or even the URL's file extension in the case of GET requests.
+ - Content Negotiation. RSVP will attempt to provide the data in a supported media-type that is requested via the Accept header, or even the URL's file extension in the case of GET requests:
    - [x] `application/json`
    - [x] `text/html`
    - [x] `text/plain`
    - [x] `application/octet-stream`
    - [x] `application/xml`
-   - [ ] `application/x.gob` (encoding/gob (is there a more appropriate MIME type for this?))
-   - [ ] `application/vnd.msgpack` (optional)
-   - [ ] Other?
+   - [x] `application/vnd.golang.gob` (Golang's [encoding/gob](https://go.dev/blog/gob))
+   - [x] `application/vnd.msgpack` (optional extension behind -tags=rsvp_msgpack)
+   - [ ] Others?
 
 It's easy for me to lose track of what I've written to [`http.ResponseWriter`](https://pkg.go.dev/net/http#ResponseWriter). Occasionally receiving the old `http: multiple response.WriteHeader calls`
 

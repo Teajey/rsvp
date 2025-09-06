@@ -1,4 +1,4 @@
-//go:build !dev_logging
+//go:build !rsvp_logs
 
 package log
 

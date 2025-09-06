@@ -441,6 +441,24 @@ func TestPermanentRedirectDoesNotRender(t *testing.T) {
 	assert.Eq(t, "body contents", "", s)
 }
 
+func TestMovedPermanentlyDoesNotRender(t *testing.T) {
+	res := rsvp.MovedPermanently("/")
+	res.Body = "POST successful"
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusMovedPermanently, statusCode)
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
+}
+
 func TestNotFoundJson(t *testing.T) {
 	res := rsvp.Response{Body: "404 Not Found", Status: http.StatusNotFound}
 	req := httptest.NewRequest("GET", "/post.json", nil)
@@ -819,4 +837,35 @@ func TestRequestForXmlButServingJson(t *testing.T) {
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", "", body)
+}
+
+func TestRequestGobInteger(t *testing.T) {
+	res := rsvp.Response{Body: 2}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "application/vnd.golang.gob")
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	assert.Eq(t, "Status code", http.StatusOK, resp.StatusCode)
+	assert.Eq(t, "Content type", "application/vnd.golang.gob", resp.Header.Get("Content-Type"))
+	body := rec.Body.Bytes()
+	assert.SlicesEq(t, "body contents", []byte{0x3, 0x4, 0x0, 0x4}, body)
+}
+
+func TestRequestGobEmptyMapUsingFileExtension(t *testing.T) {
+	res := rsvp.Response{Body: map[string]string{}}
+	req := httptest.NewRequest("GET", "/resource.gob", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	assert.Eq(t, "Status code", http.StatusOK, resp.StatusCode)
+	assert.Eq(t, "Content type", "application/vnd.golang.gob", resp.Header.Get("Content-Type"))
+	body := rec.Body.Bytes()
+	assert.SlicesEq(t, "body contents", []byte{0xd, 0x7f, 0x4, 0x1, 0x2, 0xff, 0x80, 0x0, 0x1, 0xc, 0x1, 0xc, 0x0, 0x0, 0x4, 0xff, 0x80, 0x0, 0x0}, body)
 }
