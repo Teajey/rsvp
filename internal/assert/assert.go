@@ -44,6 +44,6 @@ func FatalErrAs(t *testing.T, context string, err error, target any) {
 
 func SlicesEq[S ~[]E, E comparable](t *testing.T, context string, expected, actual S) {
 	if !slices.Equal(expected, actual) {
-		t.Errorf("%s: %v != %v", context, expected, actual)
+		t.Errorf("%s: %#v != %#v", context, expected, actual)
 	}
 }
