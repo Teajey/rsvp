@@ -31,7 +31,7 @@ type Handler interface {
 
 It's easy for me to lose track of what I've written to [`http.ResponseWriter`](https://pkg.go.dev/net/http#ResponseWriter). Occasionally receiving the old `http: multiple response.WriteHeader calls`
 
-With this library I just return a value, and I can only ever do it once, to execute an HTTP response write. Why write responses with a weird mutable reference from goodness knows where? YEUCH!
+With this library I just return a value, which I can only ever do once, to execute an HTTP response write. Why write responses with a weird mutable reference from goodness knows where? YEUCH!
 
 Having to remember to return separately from resolving the response? \*wretch*
 
