@@ -1,0 +1,49 @@
+//go:build rsvp_templ
+
+package rsvp_test
+
+import (
+	html "html/template"
+	"net/http/httptest"
+	"testing"
+	text "text/template"
+
+	"github.com/Teajey/rsvp"
+	"github.com/Teajey/rsvp/internal/assert"
+)
+
+templ HelloWorldTemplate(name string) {
+  <div>
+    if name == "" {
+      Nothing!
+    } else {
+      {name} It's Templ!
+    }
+  </div>
+}
+
+func TestTemplTemplate(t *testing.T) {
+	body := "Hello <input> World!"
+	res := rsvp.Rsvp{Body: body}.Templ(helloWorldTemplate)
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "text/html")
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	cfg.HtmlTemplate = html.New("")
+	cfg.HtmlTemplate = html.Must(cfg.HtmlTemplate.Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
+	cfg.TextTemplate = text.New("")
+	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
+
+	err := rsvp.Write(&res, rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+
+	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "<div>Hello &lt;input&gt; World! It's Templ!</div>", s)
+}
