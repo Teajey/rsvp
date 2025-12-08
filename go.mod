@@ -1,6 +1,6 @@
 module github.com/Teajey/rsvp
 
-go 1.23.3
+go 1.25.5
 
 require github.com/vmihailenco/msgpack/v5 v5.4.1
 
