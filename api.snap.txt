@@ -1,6 +1,10 @@
 package rsvp // import "github.com/Teajey/rsvp"
 
 
+FUNCTIONS
+
+func Write(res Response, w http.ResponseWriter, r *http.Request, cfg *Config) error
+
 TYPES
 
 type Config struct {
@@ -17,26 +21,28 @@ type Handler interface {
 
 type HandlerFunc func(h http.Header, r *http.Request) Response
 
-type Response struct {
+type Response interface {
+	// Has unexported methods.
+}
+
+type Rsvp struct {
 	Body         any
 	TemplateName string
 	Status       int
 	// Has unexported fields.
 }
 
-func Found(url string, body any) Response
+func Found(url string, body any) Rsvp
 
-func MovedPermanently(url string) Response
+func MovedPermanently(url string) Rsvp
 
-func Ok() Response
+func Ok() Rsvp
 
-func PermanentRedirect(url string) Response
+func PermanentRedirect(url string) Rsvp
 
-func SeeOther(url string, body any) Response
+func SeeOther(url string, body any) Rsvp
 
-func (r *Response) Html(html string)
-
-func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error
+func (r *Rsvp) Html(html string)
 
 type ServeMux struct {
 	Std    *http.ServeMux
@@ -49,6 +55,6 @@ func (m *ServeMux) Handle(pattern string, handler Handler)
 
 func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc)
 
-func (m *ServeMux) MiddleHandleFunc(pattern string, handler func(h http.ResponseWriter, r *http.Request) Response)
+func (m *ServeMux) MiddleHandleFunc(pattern string, handler func(w http.ResponseWriter, r *http.Request) Response)
 
 func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request)

@@ -12,12 +12,12 @@ import (
 )
 
 func TestRequestMsgpackInteger(t *testing.T) {
-	res := rsvp.Response{Body: 2}
+	res := rsvp.Rsvp{Body: 2}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "application/vnd.msgpack")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -28,11 +28,11 @@ func TestRequestMsgpackInteger(t *testing.T) {
 }
 
 func TestRequestMsgpackEmptyMapUsingFileExtension(t *testing.T) {
-	res := rsvp.Response{Body: map[string]string{}}
+	res := rsvp.Rsvp{Body: map[string]string{}}
 	req := httptest.NewRequest("GET", "/resource.msgpack", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()

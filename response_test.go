@@ -16,10 +16,10 @@ import (
 func TestStringBody(t *testing.T) {
 	body := `Hello,
 World!`
-	res := rsvp.Response{Body: body}
+	res := rsvp.Rsvp{Body: body}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -33,12 +33,12 @@ World!`
 func TestStringBodyAcceptApp(t *testing.T) {
 	body := `Hello,
 World!`
-	res := rsvp.Response{Body: body}
+	res := rsvp.Rsvp{Body: body}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "application/*")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -54,7 +54,7 @@ World!`
 func TestStringBodyJsonExt(t *testing.T) {
 	body := `Hello,
 World!`
-	res := rsvp.Response{Body: body}
+	res := rsvp.Rsvp{Body: body}
 	req := httptest.NewRequest("GET", "/message.json", nil)
 
 	// Even if Accept is set, the file extension takes precedence
@@ -62,7 +62,7 @@ World!`
 	rec := httptest.NewRecorder()
 
 	// Note Config.ExtensionToProposalMap must be set for this to work
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -78,14 +78,14 @@ World!`
 func TestUnsupportedExtHasBlank404(t *testing.T) {
 	body := `Hello,
 World!`
-	res := rsvp.Response{Body: body}
+	res := rsvp.Rsvp{Body: body}
 
 	req := httptest.NewRequest("GET", "/message.blah", nil)
 
 	req.Header.Set("Accept", "application/*")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -100,11 +100,11 @@ World!`
 
 func TestListBody(t *testing.T) {
 	body := []string{"hello", "world", "123"}
-	res := rsvp.Response{Body: body}
+	res := rsvp.Rsvp{Body: body}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -117,12 +117,12 @@ func TestListBody(t *testing.T) {
 
 func TestBytesBody(t *testing.T) {
 	body := []byte{0x29, 0x46, 0x4c, 0xff, 0x2f, 0x0e, 0x62, 0x41, 0xb5, 0xe3, 0xbb, 0xff, 0x06, 0x89, 0xa2, 0xef, 0xf0, 0xe2, 0x90, 0x4b, 0x62, 0x93, 0xa2, 0x6c, 0xc9, 0xcf, 0x08, 0xae, 0x18, 0xb0, 0xc2, 0xfc}
-	res := rsvp.Response{Body: body}
+	res := rsvp.Rsvp{Body: body}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "application/*")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -137,7 +137,7 @@ func TestBytesBody(t *testing.T) {
 
 func TestHtmlTemplate(t *testing.T) {
 	body := "Hello <input> World!"
-	res := rsvp.Response{Body: body, TemplateName: "tm"}
+	res := rsvp.Rsvp{Body: body, TemplateName: "tm"}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "text/html")
 	rec := httptest.NewRecorder()
@@ -148,7 +148,7 @@ func TestHtmlTemplate(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -163,7 +163,7 @@ func TestHtmlTemplate(t *testing.T) {
 
 func TestTextTemplateWithName(t *testing.T) {
 	body := "Hello, World!"
-	res := rsvp.Response{Body: body, TemplateName: "tm"}
+	res := rsvp.Rsvp{Body: body, TemplateName: "tm"}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "text/plain")
 	rec := httptest.NewRecorder()
@@ -174,7 +174,7 @@ func TestTextTemplateWithName(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -189,7 +189,7 @@ func TestTextTemplateWithName(t *testing.T) {
 
 func TestTextTemplateWithoutName(t *testing.T) {
 	body := "Hello, World!"
-	res := rsvp.Response{Body: body}
+	res := rsvp.Rsvp{Body: body}
 	req := httptest.NewRequest("GET", "/message.txt", nil)
 	rec := httptest.NewRecorder()
 
@@ -197,7 +197,7 @@ func TestTextTemplateWithoutName(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -212,12 +212,12 @@ func TestTextTemplateWithoutName(t *testing.T) {
 
 func TestAttemptToRenderNonTextAsText(t *testing.T) {
 	body := map[string]string{"I'm": "a map"}
-	res := rsvp.Response{Body: body}
+	res := rsvp.Rsvp{Body: body}
 	req := httptest.NewRequest("GET", "/message.txt", nil)
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.DefaultConfig()
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -257,7 +257,7 @@ func TestRss(t *testing.T) {
 		},
 	}
 
-	res := rsvp.Response{Body: body, TemplateName: "rss.gotmpl"}
+	res := rsvp.Rsvp{Body: body, TemplateName: "rss.gotmpl"}
 	// NOTE: Ideally, some middleware would be added to map .rss -> .xml, instead of using .rss.xml
 	req := httptest.NewRequest("GET", "/posts.rss.xml", nil)
 	rec := httptest.NewRecorder()
@@ -265,7 +265,7 @@ func TestRss(t *testing.T) {
 
 	cfg := rsvp.DefaultConfig()
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -279,7 +279,7 @@ func TestRss(t *testing.T) {
 }
 
 func TestNotFound(t *testing.T) {
-	res := rsvp.Response{Body: "404 Not Found", Status: http.StatusNotFound}
+	res := rsvp.Rsvp{Body: "404 Not Found", Status: http.StatusNotFound}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "*/*")
 	rec := httptest.NewRecorder()
@@ -287,7 +287,7 @@ func TestNotFound(t *testing.T) {
 	cfg := rsvp.DefaultConfig()
 	cfg.HtmlTemplate = html.Must(html.New("").Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -305,7 +305,7 @@ func TestBlankOk(t *testing.T) {
 
 	cfg := rsvp.DefaultConfig()
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -317,13 +317,13 @@ func TestBlankOk(t *testing.T) {
 }
 
 func TestEmptyStringBody(t *testing.T) {
-	res := rsvp.Response{Body: ""}
+	res := rsvp.Rsvp{Body: ""}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.DefaultConfig()
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -336,13 +336,13 @@ func TestEmptyStringBody(t *testing.T) {
 }
 
 func TestNilBody(t *testing.T) {
-	res := rsvp.Response{Body: nil}
+	res := rsvp.Rsvp{Body: nil}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.DefaultConfig()
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -358,7 +358,7 @@ func TestSeeOtherCanRender(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -376,7 +376,7 @@ func TestSeeOtherDoesNotRenderHtml(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -393,7 +393,7 @@ func TestFoundCanRender(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -411,7 +411,7 @@ func TestFoundDoesNotRenderHtml(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -429,7 +429,7 @@ func TestPermanentRedirectDoesNotRender(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -447,7 +447,7 @@ func TestMovedPermanentlyDoesNotRender(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -460,14 +460,14 @@ func TestMovedPermanentlyDoesNotRender(t *testing.T) {
 }
 
 func TestNotFoundJson(t *testing.T) {
-	res := rsvp.Response{Body: "404 Not Found", Status: http.StatusNotFound}
+	res := rsvp.Rsvp{Body: "404 Not Found", Status: http.StatusNotFound}
 	req := httptest.NewRequest("GET", "/post.json", nil)
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.DefaultConfig()
 	cfg.HtmlTemplate = html.Must(html.New("").Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -484,7 +484,7 @@ func TestHtmlFromString(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -497,14 +497,14 @@ func TestHtmlFromString(t *testing.T) {
 
 func TestExplicitTextRequestWithoutTextTemplate(t *testing.T) {
 	body := "Hello <input> World!"
-	res := rsvp.Response{Body: body, TemplateName: "tm"}
+	res := rsvp.Rsvp{Body: body, TemplateName: "tm"}
 	req := httptest.NewRequest("GET", "/home.txt", nil)
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.DefaultConfig()
 	cfg.HtmlTemplate = html.Must(html.New("").Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -519,14 +519,14 @@ func TestExplicitTextRequestWithoutTextTemplate(t *testing.T) {
 
 func TestExplicitHtmlRequestWithoutHtmlTemplate(t *testing.T) {
 	body := "Hello <input> World!"
-	res := rsvp.Response{Body: body, TemplateName: "tm"}
+	res := rsvp.Rsvp{Body: body, TemplateName: "tm"}
 	req := httptest.NewRequest("GET", "/home.html", nil)
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.DefaultConfig()
 	cfg.TextTemplate = text.Must(text.New("").Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -542,11 +542,11 @@ func TestExplicitHtmlRequestWithoutHtmlTemplate(t *testing.T) {
 func TestNestedFile(t *testing.T) {
 	body := `Hello,
 World!`
-	res := rsvp.Response{Body: body}
+	res := rsvp.Rsvp{Body: body}
 	req := httptest.NewRequest("GET", "/files/file.txt", nil)
 	rec := httptest.NewRecorder()
 	cfg := rsvp.DefaultConfig()
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -563,7 +563,7 @@ func TestPutWithOkResponse(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.DefaultConfig()
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -576,7 +576,7 @@ func TestPutWithOkResponse(t *testing.T) {
 
 func TestRequestUnknownFormat(t *testing.T) {
 	body := "Hello <input> World!"
-	res := rsvp.Response{Body: body, TemplateName: "tm"}
+	res := rsvp.Rsvp{Body: body, TemplateName: "tm"}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "unknown/unknown")
 	rec := httptest.NewRecorder()
@@ -587,7 +587,7 @@ func TestRequestUnknownFormat(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -602,7 +602,7 @@ func TestRequestUnknownFormat(t *testing.T) {
 
 func TestComplexDataStructuresAreJsonByDefault(t *testing.T) {
 	body := []string{"I", "am", "livid"}
-	res := rsvp.Response{Body: body, TemplateName: "tm"}
+	res := rsvp.Rsvp{Body: body, TemplateName: "tm"}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
@@ -612,7 +612,7 @@ func TestComplexDataStructuresAreJsonByDefault(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -627,7 +627,7 @@ func TestComplexDataStructuresAreJsonByDefault(t *testing.T) {
 
 func TestFirefoxAcceptHeader(t *testing.T) {
 	body := "Hello <input> World!"
-	res := rsvp.Response{Body: body, TemplateName: "tm"}
+	res := rsvp.Rsvp{Body: body, TemplateName: "tm"}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	rec := httptest.NewRecorder()
@@ -638,7 +638,7 @@ func TestFirefoxAcceptHeader(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := rsvp.Write(&res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -656,7 +656,7 @@ func TestSeeOtherBlank(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -673,7 +673,7 @@ func TestFoundBlank(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -686,12 +686,12 @@ func TestFoundBlank(t *testing.T) {
 }
 
 func TestRequestJsonEmptyString(t *testing.T) {
-	res := rsvp.Response{Body: ""}
+	res := rsvp.Rsvp{Body: ""}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "application/json")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -703,12 +703,12 @@ func TestRequestJsonEmptyString(t *testing.T) {
 }
 
 func TestRequestJsonNull(t *testing.T) {
-	res := rsvp.Response{Body: nil}
+	res := rsvp.Rsvp{Body: nil}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "application/json")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -720,12 +720,12 @@ func TestRequestJsonNull(t *testing.T) {
 }
 
 func TestRespondJsonEmptyString(t *testing.T) {
-	res := rsvp.Response{Body: ""}
+	res := rsvp.Rsvp{Body: ""}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/json")
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -737,12 +737,12 @@ func TestRespondJsonEmptyString(t *testing.T) {
 }
 
 func TestRespondJsonNull(t *testing.T) {
-	res := rsvp.Response{Body: nil}
+	res := rsvp.Rsvp{Body: nil}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/json")
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -754,12 +754,12 @@ func TestRespondJsonNull(t *testing.T) {
 }
 
 func TestRequestXmlEmptyString(t *testing.T) {
-	res := rsvp.Response{Body: ""}
+	res := rsvp.Rsvp{Body: ""}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "application/xml")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -771,12 +771,12 @@ func TestRequestXmlEmptyString(t *testing.T) {
 }
 
 func TestRequestXmlNull(t *testing.T) {
-	res := rsvp.Response{Body: nil}
+	res := rsvp.Rsvp{Body: nil}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "application/xml")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -788,12 +788,12 @@ func TestRequestXmlNull(t *testing.T) {
 }
 
 func TestRespondXmlEmptyString(t *testing.T) {
-	res := rsvp.Response{Body: ""}
+	res := rsvp.Rsvp{Body: ""}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/xml")
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -805,12 +805,12 @@ func TestRespondXmlEmptyString(t *testing.T) {
 }
 
 func TestRespondXmlNull(t *testing.T) {
-	res := rsvp.Response{Body: nil}
+	res := rsvp.Rsvp{Body: nil}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/xml")
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -822,13 +822,13 @@ func TestRespondXmlNull(t *testing.T) {
 }
 
 func TestRequestForXmlButServingJson(t *testing.T) {
-	res := rsvp.Response{Body: nil}
+	res := rsvp.Rsvp{Body: nil}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "application/xml")
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/json")
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -840,12 +840,12 @@ func TestRequestForXmlButServingJson(t *testing.T) {
 }
 
 func TestRequestGobInteger(t *testing.T) {
-	res := rsvp.Response{Body: 2}
+	res := rsvp.Rsvp{Body: 2}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "application/vnd.golang.gob")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -856,11 +856,11 @@ func TestRequestGobInteger(t *testing.T) {
 }
 
 func TestRequestGobEmptyMapUsingFileExtension(t *testing.T) {
-	res := rsvp.Response{Body: map[string]string{}}
+	res := rsvp.Rsvp{Body: map[string]string{}}
 	req := httptest.NewRequest("GET", "/resource.gob", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.DefaultConfig())
+	err := rsvp.Write(&res, rec, req, rsvp.DefaultConfig())
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()

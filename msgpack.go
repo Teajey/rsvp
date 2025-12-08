@@ -22,7 +22,7 @@ func init() {
 	extendedMediaTypes = append(extendedMediaTypes, mMsgpack)
 }
 
-func msgpackHandler(mediaType supportedType, w http.ResponseWriter, res *Response) (bool, error) {
+func msgpackHandler(mediaType supportedType, w http.ResponseWriter, res *Rsvp) (bool, error) {
 	if mediaType != mMsgpack {
 		return false, nil
 	}

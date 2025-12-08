@@ -40,11 +40,11 @@ func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc) {
 // Register an RSVP handler with access to http.ResponseWriter
 //
 // The intention is to make adapting net/http middleware to RSVP easier
-func (m *ServeMux) MiddleHandleFunc(pattern string, handler func(h http.ResponseWriter, r *http.Request) Response) {
+func (m *ServeMux) MiddleHandleFunc(pattern string, handler func(w http.ResponseWriter, r *http.Request) Response) {
 	m.Std.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		response := handler(w, r)
 
-		err := response.Write(w, r, m.Config)
+		err := Write(response, w, r, m.Config)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to write rsvp.Response: %s", err))
 		}

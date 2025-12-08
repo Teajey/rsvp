@@ -17,7 +17,18 @@ import (
 	"github.com/Teajey/rsvp/internal/log"
 )
 
-type Response struct {
+type Response interface {
+	determineMediaType(w http.ResponseWriter, r *http.Request, cfg *Config) supportedType
+	renderHtml(w http.ResponseWriter, r *http.Request, cfg *Config) error
+	renderPlainText(w http.ResponseWriter, cfg *Config) error
+	renderJson(w http.ResponseWriter) error
+	renderXml(w http.ResponseWriter) error
+	renderBytes(w http.ResponseWriter) error
+	renderGob(w http.ResponseWriter) error
+	renderMediaType(mediaType supportedType, w http.ResponseWriter) error
+}
+
+type Rsvp struct {
 	// Beware that the default value of nil will render as application/json "null\n" rather
 	// than the expected empty body. Set Body to "" to return a blank response.
 	//
@@ -37,13 +48,13 @@ type Response struct {
 	permanentRedirect string
 }
 
-func (res *Response) isBlank() bool {
+func (res *Rsvp) isBlank() bool {
 	return res.Body == nil && res.blankBodyOverride
 }
 
 var extendedMediaTypes []supportedType = nil
 
-func (res *Response) mediaTypes(cfg *Config) iter.Seq[supportedType] {
+func (res *Rsvp) mediaTypes(cfg *Config) iter.Seq[supportedType] {
 	return func(yield func(supportedType) bool) {
 		if res.predeterminedMediaType != "" {
 			log.Dev("Overriding media-types with %s", res.predeterminedMediaType)
@@ -112,21 +123,21 @@ func DefaultConfig() *Config {
 	}
 }
 
-type mediaTypeExtensionHandler = func(mediaType supportedType, w http.ResponseWriter, res *Response) (bool, error)
+type mediaTypeExtensionHandler = func(mediaType supportedType, w http.ResponseWriter, res *Rsvp) (bool, error)
 
 var mediaTypeExtensionHandlers []mediaTypeExtensionHandler = nil
 
-func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error {
+func (res *Rsvp) determineMediaType(w http.ResponseWriter, r *http.Request, cfg *Config) supportedType {
 	log.Dev("config: %#v", cfg)
 
 	if res.movedPermanently != "" {
 		http.Redirect(w, r, res.movedPermanently, http.StatusMovedPermanently)
-		return nil
+		return ""
 	}
 
 	if res.permanentRedirect != "" {
 		http.Redirect(w, r, res.permanentRedirect, http.StatusPermanentRedirect)
-		return nil
+		return ""
 	}
 
 	h := w.Header()
@@ -157,31 +168,31 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 	if mediaType == "" {
 		if ext != "" {
 			w.WriteHeader(http.StatusNotFound)
-			return nil
+			return ""
 		}
 
 		w.WriteHeader(http.StatusNotAcceptable)
-		return nil
+		return ""
 	}
 
 	if mediaType == "text/plain" && cfg.TextTemplate == nil && res.TemplateName != "" {
 		w.WriteHeader(http.StatusNotFound)
-		return nil
+		return ""
 	}
 
 	// If the client's getting HTML they're probably using a browser which will
 	// automatically follow this SeeOther. We shouldn't bother rendering anything.
 	if res.seeOther != "" && (mediaType == "text/html" || res.isBlank()) {
 		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
-		return nil
+		return ""
 	} else if res.found != "" && (mediaType == "text/html" || res.isBlank()) {
 		http.Redirect(w, r, res.found, http.StatusFound)
-		return nil
+		return ""
 	}
 
 	if res.isBlank() {
 		log.Dev("Early returning because body is empty")
-		return nil
+		return ""
 	}
 
 	if contentType == "" {
@@ -206,89 +217,129 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		w.WriteHeader(res.Status)
 	}
 
-	switch mediaType {
-	case mHtml:
-		log.Dev("Rendering html...")
-		if res.TemplateName != "" && cfg.HtmlTemplate != nil {
-			err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Body)
-			if err != nil {
-				return fmt.Errorf("failed to render body HTML template %s: %w", res.TemplateName, err)
-			}
-		} else {
-			_, err := w.Write([]byte(res.Body.(string)))
-			if err != nil {
-				return fmt.Errorf("failed to write string as HTML: %w", err)
-			}
-		}
-	case mPlaintext:
-		log.Dev("Rendering plain text...")
+	return mediaType
+}
 
-		if res.TemplateName != "" {
-			log.Dev("Template name is set, so expecting a template...")
-
-			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
-				log.Dev("Executing TextTemplate...")
-				err := tm.ExecuteTemplate(w, res.TemplateName, res.Body)
-				if err != nil {
-					return fmt.Errorf("failed to render body as text template %s: %w", res.TemplateName, err)
-				}
-				break
-			}
-
-			return fmt.Errorf("TemplateName was set, but there is no TextTemplate to check")
-		}
-		log.Dev("Not using a template because either TextTemplate or TemplateName is not set...")
-
-		if body, ok := res.Body.(string); ok {
-			log.Dev("Can write text directly because it is a string...")
-			_, err := w.Write([]byte(body))
-			if err != nil {
-				return fmt.Errorf("failed to render body as plain-text string: %w", err)
-			}
-			break
-		}
-
-		return fmt.Errorf("trying to render body as %s but this type is not supported for strings: %#v", mPlaintext, res.Body)
-	case mJson:
-		log.Dev("Rendering json...")
-		err := json.NewEncoder(w).Encode(res.Body)
+func (res *Rsvp) renderHtml(w http.ResponseWriter, r *http.Request, cfg *Config) error {
+	if res.TemplateName != "" && cfg.HtmlTemplate != nil {
+		err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Body)
 		if err != nil {
-			return fmt.Errorf("failed to render body as JSON: %w", err)
+			return fmt.Errorf("failed to render body HTML template %s: %w", res.TemplateName, err)
 		}
-	case mXml:
-		log.Dev("Rendering xml...")
-		enc := xml.NewEncoder(w)
-		enc.Indent("", "   ")
-		err := enc.Encode(res.Body)
+	} else {
+		_, err := w.Write([]byte(res.Body.(string)))
 		if err != nil {
-			return fmt.Errorf("failed to render body as XML: %w", err)
+			return fmt.Errorf("failed to write string as HTML: %w", err)
 		}
-	case mBytes:
-		log.Dev("Rendering bytes...")
-		_, err := w.Write(res.Body.([]byte))
-		if err != nil {
-			return fmt.Errorf("failed to render body as bytes: %w", err)
-		}
-	case mGob:
-		log.Dev("Rendering gob...")
-		err := gob.NewEncoder(w).Encode(res.Body)
-		if err != nil {
-			return fmt.Errorf("failed to render body as encoding/gob: %w", err)
-		}
-	default:
-		for _, handler := range mediaTypeExtensionHandlers {
-			matched, err := handler(mediaType, w, res)
-			if err != nil {
-				return fmt.Errorf("an extension handler failed: %w", err)
-			}
-			if matched {
-				return nil
-			}
-		}
-		return fmt.Errorf("unhandled mediaType: %#v", mediaType)
 	}
 
 	return nil
+}
+
+func (res *Rsvp) renderPlainText(w http.ResponseWriter, cfg *Config) error {
+	if res.TemplateName != "" {
+		log.Dev("Template name is set, so expecting a template...")
+
+		if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
+			log.Dev("Executing TextTemplate...")
+			err := tm.ExecuteTemplate(w, res.TemplateName, res.Body)
+			if err != nil {
+				return fmt.Errorf("failed to render body as text template %s: %w", res.TemplateName, err)
+			}
+			return nil
+		}
+
+		return fmt.Errorf("TemplateName was set, but there is no TextTemplate to check")
+	}
+	log.Dev("Not using a template because either TextTemplate or TemplateName is not set...")
+
+	if body, ok := res.Body.(string); ok {
+		log.Dev("Can write text directly because it is a string...")
+		_, err := w.Write([]byte(body))
+		if err != nil {
+			return fmt.Errorf("failed to render body as plain-text string: %w", err)
+		}
+		return nil
+	}
+
+	return fmt.Errorf("trying to render body as %s but this type is not supported for strings: %#v", mPlaintext, res.Body)
+}
+
+func (res *Rsvp) renderJson(w http.ResponseWriter) error {
+	err := json.NewEncoder(w).Encode(res.Body)
+	if err != nil {
+		return fmt.Errorf("failed to render body as JSON: %w", err)
+	}
+	return nil
+}
+
+func (res *Rsvp) renderXml(w http.ResponseWriter) error {
+	enc := xml.NewEncoder(w)
+	enc.Indent("", "   ")
+	err := enc.Encode(res.Body)
+	if err != nil {
+		return fmt.Errorf("failed to render body as XML: %w", err)
+	}
+	return nil
+}
+
+func (res *Rsvp) renderBytes(w http.ResponseWriter) error {
+	_, err := w.Write(res.Body.([]byte))
+	if err != nil {
+		return fmt.Errorf("failed to render body as bytes: %w", err)
+	}
+	return nil
+}
+
+func (res *Rsvp) renderGob(w http.ResponseWriter) error {
+	err := gob.NewEncoder(w).Encode(res.Body)
+	if err != nil {
+		return fmt.Errorf("failed to render body as encoding/gob: %w", err)
+	}
+	return nil
+}
+
+func (res *Rsvp) renderMediaType(mediaType supportedType, w http.ResponseWriter) error {
+	for _, handler := range mediaTypeExtensionHandlers {
+		matched, err := handler(mediaType, w, res)
+		if err != nil {
+			return fmt.Errorf("an extension handler failed: %w", err)
+		}
+		if matched {
+			return nil
+		}
+	}
+	return fmt.Errorf("unhandled mediaType: %#v", mediaType)
+}
+
+func Write(res Response, w http.ResponseWriter, r *http.Request, cfg *Config) error {
+	mediaType := res.determineMediaType(w, r, cfg)
+	if mediaType == "" {
+		return nil
+	}
+
+	switch mediaType {
+	case mHtml:
+		log.Dev("Rendering html...")
+		return res.renderHtml(w, r, cfg)
+	case mPlaintext:
+		log.Dev("Rendering plain text...")
+		return res.renderPlainText(w, cfg)
+	case mJson:
+		log.Dev("Rendering json...")
+		return res.renderJson(w)
+	case mXml:
+		log.Dev("Rendering xml...")
+		return res.renderXml(w)
+	case mBytes:
+		log.Dev("Rendering bytes...")
+		return res.renderBytes(w)
+	case mGob:
+		log.Dev("Rendering gob...")
+		return res.renderGob(w)
+	default:
+		return res.renderMediaType(mediaType, w)
+	}
 }
 
 // Will redirect to the given URL after writing the response body.
@@ -297,8 +348,8 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 // this case. For instance, if the request was a JSON PUT from
 // the commandline it's helpful to see the result without having
 // to manually follow the Location header.
-func SeeOther(url string, body any) Response {
-	return Response{
+func SeeOther(url string, body any) Rsvp {
+	return Rsvp{
 		Body:     body,
 		seeOther: url,
 
@@ -306,8 +357,8 @@ func SeeOther(url string, body any) Response {
 	}
 }
 
-func Found(url string, body any) Response {
-	return Response{
+func Found(url string, body any) Rsvp {
+	return Rsvp{
 		Body:  body,
 		found: url,
 
@@ -316,8 +367,8 @@ func Found(url string, body any) Response {
 }
 
 // Will perform an immediate 301 using the given URL.
-func MovedPermanently(url string) Response {
-	return Response{movedPermanently: url}
+func MovedPermanently(url string) Rsvp {
+	return Rsvp{movedPermanently: url}
 }
 
 // Will perform an immediate 308 using the given URL.
@@ -325,19 +376,19 @@ func MovedPermanently(url string) Response {
 // 308 is intended for non-GET links/operations.
 //
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections#permanent_redirections
-func PermanentRedirect(url string) Response {
-	return Response{permanentRedirect: url}
+func PermanentRedirect(url string) Rsvp {
+	return Rsvp{permanentRedirect: url}
 }
 
 // Returns a blank 200 OK response
-func Ok() Response {
-	return Response{blankBodyOverride: true}
+func Ok() Rsvp {
+	return Rsvp{blankBodyOverride: true}
 }
 
 // Set body to html using a string, making sure "Content-Type: text/html; charset=utf-8" is set.
 //
 // Use rsvp.ServeMux.HtmlTemplate and rsvp.Response.TemplateName to render from an HTML template.
-func (r *Response) Html(html string) {
+func (r *Rsvp) Html(html string) {
 	r.Body = html
 	r.predeterminedMediaType = mHtml
 	r.predeterminedContentType = mediaTypeToContentType[mHtml]
