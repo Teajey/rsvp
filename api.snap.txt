@@ -38,6 +38,7 @@ type Config struct {
 	RenderMovedPermanently bool
 	RenderSeeOtherBlackList []string
 	RenderFoundBlackList []string
+
 	// Has unexported fields.
 }
 
@@ -63,6 +64,7 @@ type Response struct {
 	Body         any
 	TemplateName string
 	Status       int
+
 	// Has unexported fields.
 }
 

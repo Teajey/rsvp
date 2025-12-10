@@ -31,6 +31,7 @@ struct = False
 trailing_comment = False
 for line, next_line in window(fileinput.input()):
     line = line.removesuffix("\n")
+    next_line = next_line.removesuffix("\n")
 
     if line.startswith("type ") and line.endswith(" struct {"):
         struct = True
@@ -48,7 +49,8 @@ for line, next_line in window(fileinput.input()):
         if (
             line != ""
             and not line.lstrip().startswith("//")
-            or "Has unexported fields" in line
+            or line.endswith("Has unexported fields.")
+            or next_line.endswith("Has unexported fields.")
         ):
             print(line)
     elif trailing_comment:
