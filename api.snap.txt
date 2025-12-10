@@ -1,13 +1,44 @@
 package rsvp // import "github.com/Teajey/rsvp"
 
 
+CONSTANTS
+
+const (
+	SupportedMediaTypePlaintext string = "text/plain"
+	SupportedMediaTypeHtml      string = "text/html"
+	SupportedMediaTypeBytes     string = "application/octet-stream"
+	SupportedMediaTypeJson      string = "application/json"
+	SupportedMediaTypeXml       string = "application/xml"
+	SupportedMediaTypeGob       string = "application/vnd.golang.gob"
+)
+
+VARIABLES
+
+var AllSupportedTypes = []string{
+	SupportedMediaTypePlaintext,
+	SupportedMediaTypeHtml,
+	SupportedMediaTypeBytes,
+	SupportedMediaTypeJson,
+	SupportedMediaTypeXml,
+	SupportedMediaTypeGob,
+}
+    Can be used to place every supported type on:
+      - Config.RenderSeeOtherBlackList
+      - Config.RenderFoundBlackList
+
+
 TYPES
 
 type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
+	RenderPermanentRedirect bool
+	RenderMovedPermanently bool
+	RenderSeeOtherBlackList []string
+	RenderFoundBlackList []string
 	// Has unexported fields.
 }
+    Settings for writing the rsvp.Response
 
 func DefaultConfig() *Config
 

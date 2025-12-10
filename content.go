@@ -7,36 +7,45 @@ import (
 	"github.com/Teajey/rsvp/internal/log"
 )
 
-// TODO: I'm not sure that this type is helpful. It might be worth removing.
-type supportedType string
-
 const (
-	mPlaintext supportedType = "text/plain"
-	mHtml      supportedType = "text/html"
-	mBytes     supportedType = "application/octet-stream"
-	mJson      supportedType = "application/json"
-	mXml       supportedType = "application/xml"
-	mGob       supportedType = "application/vnd.golang.gob"
+	SupportedMediaTypePlaintext string = "text/plain"
+	SupportedMediaTypeHtml      string = "text/html"
+	SupportedMediaTypeBytes     string = "application/octet-stream"
+	SupportedMediaTypeJson      string = "application/json"
+	SupportedMediaTypeXml       string = "application/xml"
+	SupportedMediaTypeGob       string = "application/vnd.golang.gob"
 )
 
-var mediaTypeToContentType = map[supportedType]string{
+// Can be used to place every supported type on:
+//   - Config.RenderSeeOtherBlackList
+//   - Config.RenderFoundBlackList
+var AllSupportedTypes = []string{
+	SupportedMediaTypePlaintext,
+	SupportedMediaTypeHtml,
+	SupportedMediaTypeBytes,
+	SupportedMediaTypeJson,
+	SupportedMediaTypeXml,
+	SupportedMediaTypeGob,
+}
+
+var mediaTypeToContentType = map[string]string{
 	// TODO: Why did I insist on specifying utf-8 here? There should be note. I think it might just be because it's inline with what net/http does
-	mPlaintext: "text/plain; charset=utf-8",
-	mHtml:      "text/html; charset=utf-8",
-	mBytes:     "application/octet-stream",
-	mJson:      "application/json",
-	mXml:       "application/xml",
-	mGob:       "application/vnd.golang.gob",
+	SupportedMediaTypePlaintext: "text/plain; charset=utf-8",
+	SupportedMediaTypeHtml:      "text/html; charset=utf-8",
+	SupportedMediaTypeBytes:     "application/octet-stream",
+	SupportedMediaTypeJson:      "application/json",
+	SupportedMediaTypeXml:       "application/xml",
+	SupportedMediaTypeGob:       "application/vnd.golang.gob",
 }
 
 var defaultExtToProposalMap = map[string]string{
-	"txt":  string(mPlaintext),
-	"html": string(mHtml),
-	"htm":  string(mHtml),
-	"json": string(mJson),
-	"xml":  string(mXml),
-	"bin":  string(mBytes),
-	"gob":  string(mGob),
+	"txt":  SupportedMediaTypePlaintext,
+	"html": SupportedMediaTypeHtml,
+	"htm":  SupportedMediaTypeHtml,
+	"json": SupportedMediaTypeJson,
+	"xml":  SupportedMediaTypeXml,
+	"bin":  SupportedMediaTypeBytes,
+	"gob":  SupportedMediaTypeGob,
 }
 
 // mediatype string m must be well-formed
@@ -46,13 +55,13 @@ func splitMediaType(m string) (string, string) {
 }
 
 // mediatype string b must be well-formed
-func mediaTypesEqual(a supportedType, b string) bool {
+func mediaTypesEqual(a string, b string) bool {
 	if strings.HasPrefix(b, "*/") {
 		return true
 	}
 
 	b1, b2 := splitMediaType(b)
-	s := string(a)
+	s := a
 	s1, s2 := splitMediaType(s)
 
 	if b1 == s1 {
@@ -62,7 +71,7 @@ func mediaTypesEqual(a supportedType, b string) bool {
 	return false
 }
 
-func chooseMediaType(ext string, supported []supportedType, accept iter.Seq[string], ext2proposal map[string]string) supportedType {
+func chooseMediaType(ext string, supported []string, accept iter.Seq[string], ext2proposal map[string]string) string {
 	if ext != "" {
 		log.Dev("Checking extension: %#v", ext)
 		if a, ok := ext2proposal[ext]; ok {

@@ -388,6 +388,44 @@ func TestSeeOtherDoesNotRenderHtml(t *testing.T) {
 	assert.Eq(t, "body contents", "", s)
 }
 
+func TestSeeOtherDoesNotRenderPlaintextWhenConfigured(t *testing.T) {
+	res := rsvp.SeeOther("/", "POST successful")
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	cfg.RenderSeeOtherBlackList = []string{rsvp.SupportedMediaTypePlaintext}
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
+}
+
+func TestSeeOtherDoesRenderWhenConfigured(t *testing.T) {
+	res := rsvp.SeeOther("/", nil)
+	res.Html("<div></div>")
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	cfg.RenderSeeOtherBlackList = nil
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
+	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
+	assert.Eq(t, "body contents", res.Body.(string), rec.Body.String())
+}
+
 func TestFoundCanRender(t *testing.T) {
 	res := rsvp.Found("/", "POST successful")
 	req := httptest.NewRequest("POST", "/", nil)
