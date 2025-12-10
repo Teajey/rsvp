@@ -22,10 +22,12 @@ var AllSupportedTypes = []string{
 	SupportedMediaTypeXml,
 	SupportedMediaTypeGob,
 }
-    Can be used to place every supported type on:
-      - Config.RenderSeeOtherBlackList
-      - Config.RenderFoundBlackList
 
+FUNCTIONS
+
+func Middleware(cfg *Config, next Handler) http.HandlerFunc
+
+func MiddlewareBeforeWriteResponse(cfg *Config, next MiddleHandler) http.HandlerFunc
 
 TYPES
 
@@ -38,7 +40,6 @@ type Config struct {
 	RenderFoundBlackList []string
 	// Has unexported fields.
 }
-    Settings for writing the rsvp.Response
 
 func DefaultConfig() *Config
 
@@ -47,6 +48,16 @@ type Handler interface {
 }
 
 type HandlerFunc func(h http.Header, r *http.Request) Response
+
+func (f HandlerFunc) ServeHTTP(h http.Header, r *http.Request) Response
+
+type MiddleHandler interface {
+	ServeHTTP(w http.ResponseWriter, r *http.Request) Response
+}
+
+type MiddleHandlerFunc func(w http.ResponseWriter, r *http.Request) Response
+
+func (f MiddleHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) Response
 
 type Response struct {
 	Body         any
@@ -79,7 +90,5 @@ func NewServeMux() *ServeMux
 func (m *ServeMux) Handle(pattern string, handler Handler)
 
 func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc)
-
-func (m *ServeMux) MiddleHandleFunc(pattern string, handler func(h http.ResponseWriter, r *http.Request) Response)
 
 func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request)
