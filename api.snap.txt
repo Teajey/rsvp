@@ -1,15 +1,52 @@
 package rsvp // import "github.com/Teajey/rsvp"
 
 
+CONSTANTS
+
+const (
+	SupportedMediaTypePlaintext string = "text/plain"
+	SupportedMediaTypeHtml      string = "text/html"
+	SupportedMediaTypeBytes     string = "application/octet-stream"
+	SupportedMediaTypeJson      string = "application/json"
+	SupportedMediaTypeXml       string = "application/xml"
+	SupportedMediaTypeGob       string = "application/vnd.golang.gob"
+)
+
+VARIABLES
+
+var AllSupportedTypes = []string{
+	SupportedMediaTypePlaintext,
+	SupportedMediaTypeHtml,
+	SupportedMediaTypeBytes,
+	SupportedMediaTypeJson,
+	SupportedMediaTypeXml,
+	SupportedMediaTypeGob,
+}
+
+FUNCTIONS
+
+func Middleware(cfg *Config, next Handler) http.HandlerFunc
+
+func MiddlewareBeforeWriteResponse(cfg *Config, next MiddleHandler) http.HandlerFunc
+
 TYPES
 
 type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
-	// Has unexported fields.
+	RenderPermanentRedirect bool
+	RenderMovedPermanently *RenderMovedPermanently
+	RenderSeeOtherBlackList []string
+	RenderFoundBlackList []string
 }
 
 func DefaultConfig() *Config
+
+type DefaultMovedPermanentlyResponseBody struct {
+	MovedPermanently string
+}
+
+type GenerateMovedPermenentlyResponse func(location string) Response
 
 type Handler interface {
 	ServeHTTP(h http.Header, r *http.Request) Response
@@ -17,10 +54,29 @@ type Handler interface {
 
 type HandlerFunc func(h http.Header, r *http.Request) Response
 
+func (f HandlerFunc) ServeHTTP(h http.Header, r *http.Request) Response
+
+type MiddleHandler interface {
+	ServeHTTP(w http.ResponseWriter, r *http.Request) Response
+}
+
+type MiddleHandlerFunc func(w http.ResponseWriter, r *http.Request) Response
+
+func (f MiddleHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) Response
+
+type RenderMovedPermanently struct {
+	HtmlTemplate *html.Template
+	TextTemplate *text.Template
+	GenerateMovedPermenentlyResponse
+}
+
+func DefaultRenderMovedPermanently() RenderMovedPermanently
+
 type Response struct {
 	Body         any
 	TemplateName string
 	Status       int
+
 	// Has unexported fields.
 }
 
@@ -48,7 +104,5 @@ func NewServeMux() *ServeMux
 func (m *ServeMux) Handle(pattern string, handler Handler)
 
 func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc)
-
-func (m *ServeMux) MiddleHandleFunc(pattern string, handler func(h http.ResponseWriter, r *http.Request) Response)
 
 func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request)

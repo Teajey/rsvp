@@ -1,5 +1,7 @@
 #!/bin/sh
 
+go fmt
+
 APISNAP=api.snap.txt
 
 ./scripts/api_snapshot > $APISNAP

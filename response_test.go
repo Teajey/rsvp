@@ -388,6 +388,44 @@ func TestSeeOtherDoesNotRenderHtml(t *testing.T) {
 	assert.Eq(t, "body contents", "", s)
 }
 
+func TestSeeOtherDoesNotRenderPlaintextWhenConfigured(t *testing.T) {
+	res := rsvp.SeeOther("/", "POST successful")
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	cfg.RenderSeeOtherBlackList = []string{rsvp.SupportedMediaTypePlaintext}
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
+}
+
+func TestSeeOtherDoesRenderWhenConfigured(t *testing.T) {
+	res := rsvp.SeeOther("/", nil)
+	res.Html("<div></div>")
+	req := httptest.NewRequest("POST", "/", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.DefaultConfig()
+	cfg.RenderSeeOtherBlackList = nil
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
+	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
+	assert.Eq(t, "body contents", res.Body.(string), rec.Body.String())
+}
+
 func TestFoundCanRender(t *testing.T) {
 	res := rsvp.Found("/", "POST successful")
 	req := httptest.NewRequest("POST", "/", nil)
@@ -441,10 +479,10 @@ func TestPermanentRedirectDoesNotRender(t *testing.T) {
 	assert.Eq(t, "body contents", "", s)
 }
 
-func TestMovedPermanentlyDoesNotRender(t *testing.T) {
+func TestMovedPermanentlyDoesRender(t *testing.T) {
 	res := rsvp.MovedPermanently("/")
-	res.Body = "POST successful"
-	req := httptest.NewRequest("POST", "/", nil)
+	res.Body = "Hello!"
+	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
 	err := res.Write(rec, req, rsvp.DefaultConfig())
@@ -456,7 +494,24 @@ func TestMovedPermanentlyDoesNotRender(t *testing.T) {
 	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "", s)
+	assert.Eq(t, "body contents", "This resource has Moved Permanently to a new location: /\\n\\n", s)
+}
+
+func TestNotAcceptableDoesRenderDefault(t *testing.T) {
+	res := rsvp.Response{Body: "Hello!"}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "application/vnd.foobar")
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.DefaultConfig())
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", res.Body.(string), s)
 }
 
 func TestNotFoundJson(t *testing.T) {
@@ -592,12 +647,12 @@ func TestRequestUnknownFormat(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 406, statusCode)
+	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
 
-	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "", s)
+	assert.Eq(t, "body contents", "Message: Hello <input> World!", s)
 }
 
 func TestComplexDataStructuresAreJsonByDefault(t *testing.T) {
@@ -833,10 +888,10 @@ func TestRequestForXmlButServingJson(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 406, statusCode)
+	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
-	assert.Eq(t, "body contents", "", body)
+	assert.Eq(t, "body contents", "null\n", body)
 }
 
 func TestRequestGobInteger(t *testing.T) {

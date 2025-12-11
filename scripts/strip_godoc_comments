@@ -28,27 +28,32 @@ def window(it: Iterator[T], size: int = 2) -> Iterator[list[T]]:
 
 
 struct = False
-func = False
+trailing_comment = False
 for line, next_line in window(fileinput.input()):
     line = line.removesuffix("\n")
+    next_line = next_line.removesuffix("\n")
 
     if line.startswith("type ") and line.endswith(" struct {"):
         struct = True
     elif struct and line.endswith("}"):
         struct = False
     elif line.startswith("func"):
-        func = True
+        trailing_comment = True
     elif next_line[:4].strip() != "":
-        func = False
+        trailing_comment = False
+
+    if line.strip().startswith("}"):
+        trailing_comment = True
 
     if struct:
         if (
             line != ""
             and not line.lstrip().startswith("//")
-            or "Has unexported fields" in line
+            or line.endswith("Has unexported fields.")
+            or next_line.endswith("Has unexported fields.")
         ):
             print(line)
-    elif func:
+    elif trailing_comment:
         if line != "" and not line.startswith("    "):
             print(line)
     else:

@@ -10,20 +10,20 @@ import (
 	msgpack "github.com/vmihailenco/msgpack/v5"
 )
 
-const mMsgpack supportedType = "application/vnd.msgpack"
+const SupportedMediaTypeMsgpack string = "application/vnd.msgpack"
 
 func init() {
-	mediaTypeToContentType[mMsgpack] = "application/vnd.msgpack"
+	mediaTypeToContentType[SupportedMediaTypeMsgpack] = "application/vnd.msgpack"
 
-	defaultExtToProposalMap["msgpack"] = string(mMsgpack)
+	extToProposalMap["msgpack"] = SupportedMediaTypeMsgpack
 
 	mediaTypeExtensionHandlers = append(mediaTypeExtensionHandlers, msgpackHandler)
 
-	extendedMediaTypes = append(extendedMediaTypes, mMsgpack)
+	extendedMediaTypes = append(extendedMediaTypes, SupportedMediaTypeMsgpack)
 }
 
-func msgpackHandler(mediaType supportedType, w http.ResponseWriter, res *Response) (bool, error) {
-	if mediaType != mMsgpack {
+func msgpackHandler(mediaType string, w http.ResponseWriter, res *Response) (bool, error) {
+	if mediaType != SupportedMediaTypeMsgpack {
 		return false, nil
 	}
 
