@@ -15,7 +15,7 @@ const SupportedMediaTypeMsgpack string = "application/vnd.msgpack"
 func init() {
 	mediaTypeToContentType[SupportedMediaTypeMsgpack] = "application/vnd.msgpack"
 
-	defaultExtToProposalMap["msgpack"] = SupportedMediaTypeMsgpack
+	extToProposalMap["msgpack"] = SupportedMediaTypeMsgpack
 
 	mediaTypeExtensionHandlers = append(mediaTypeExtensionHandlers, msgpackHandler)
 

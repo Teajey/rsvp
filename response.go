@@ -95,6 +95,33 @@ func (res *Response) mediaTypes(cfg *Config) iter.Seq[string] {
 	}
 }
 
+type RenderMovedPermanently struct {
+	HtmlTemplate *html.Template
+	TextTemplate *text.Template
+	GenerateMovedPermenentlyResponse
+}
+
+type GenerateMovedPermenentlyResponse func(location string) Response
+
+type DefaultMovedPermanentlyResponseBody struct {
+	MovedPermanently string
+}
+
+func DefaultRenderMovedPermanently() RenderMovedPermanently {
+	return RenderMovedPermanently{
+		HtmlTemplate: html.Must(html.New("moved").Parse(`<a href="{{.MovedPermanently}}">Moved Permanently</a>\n\n`)),
+		TextTemplate: text.Must(text.New("moved").Parse(`This resource has Moved Permanently to a new location: {{.MovedPermanently}}\n\n`)),
+		GenerateMovedPermenentlyResponse: func(location string) Response {
+			return Response{
+				Body: DefaultMovedPermanentlyResponseBody{
+					MovedPermanently: location,
+				},
+				TemplateName: "moved",
+			}
+		},
+	}
+}
+
 // Settings for writing the rsvp.Response
 type Config struct {
 	HtmlTemplate *html.Template
@@ -107,26 +134,23 @@ type Config struct {
 	// Determines whether a response is rendered in a 301 Moved Permanently response.
 	//
 	// In cases where a legacy resource is retained, this is useful.
-	RenderMovedPermanently bool
+	RenderMovedPermanently *RenderMovedPermanently
 	// Determines which media types will not be rendered in a 303 See Other response.
 	RenderSeeOtherBlackList []string
 	// Determines which media types will not be rendered in a 302 Found response.
 	RenderFoundBlackList []string
-
-	// Controls which file extensions override the Accept header. E.g. "json" will only accept "application/json" by default.
-	//
-	// You might instead set "json" to accept "application/*", or "*/*" (although the latter is the default if "json" weren't set at all)
-	extToProposalMap map[string]string
 }
 
 // This sets some non-trivial, non-zero defaults:
 //   - RenderSeeOtherBlackList: []{"text/html"},
 //   - RenderFoundBlackList:    []{"text/html"},
+//   - RenderMovedPermanently:  &DefaultRenderMovedPermanently(),
 func DefaultConfig() *Config {
+	renderMovedPermanently := DefaultRenderMovedPermanently()
 	return &Config{
 		RenderSeeOtherBlackList: []string{SupportedMediaTypeHtml},
 		RenderFoundBlackList:    []string{SupportedMediaTypeHtml},
-		extToProposalMap:        defaultExtToProposalMap,
+		RenderMovedPermanently:  &renderMovedPermanently,
 	}
 }
 
@@ -136,11 +160,6 @@ var mediaTypeExtensionHandlers []mediaTypeExtensionHandler = nil
 
 func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error {
 	log.Dev("config: %#v", cfg)
-
-	if !cfg.RenderMovedPermanently && res.movedPermanently != "" {
-		http.Redirect(w, r, res.movedPermanently, http.StatusMovedPermanently)
-		return nil
-	}
 
 	if !cfg.RenderPermanentRedirect && res.permanentRedirect != "" {
 		http.Redirect(w, r, res.permanentRedirect, http.StatusPermanentRedirect)
@@ -169,7 +188,7 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		ext = strings.TrimPrefix(filepath.Ext(r.URL.Path), ".")
 	}
 
-	mediaType := chooseMediaType(ext, supported, content.ParseAccept(accept), cfg.extToProposalMap)
+	mediaType := chooseMediaType(ext, supported, content.ParseAccept(accept))
 	log.Dev("mediaType %#v", mediaType)
 
 	if mediaType == "" {
@@ -178,8 +197,17 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 			return nil
 		}
 
-		w.WriteHeader(http.StatusNotAcceptable)
-		return nil
+		res.Status = http.StatusNotAcceptable
+		log.Dev("NotAcceptable. Ignoring Accept header...")
+		mediaType = chooseMediaType(ext, supported, content.ParseAccept(""))
+		log.Dev("new mediaType %#v", mediaType)
+	}
+
+	if cfg.RenderMovedPermanently != nil && res.movedPermanently != "" {
+		response := cfg.RenderMovedPermanently.GenerateMovedPermenentlyResponse(res.movedPermanently)
+		h.Set("Location", res.movedPermanently)
+		w.WriteHeader(http.StatusMovedPermanently)
+		return render(&response, mediaType, w, cfg.RenderMovedPermanently.TextTemplate, cfg.RenderMovedPermanently.HtmlTemplate)
 	}
 
 	if mediaType == "text/plain" && cfg.TextTemplate == nil && res.TemplateName != "" {
@@ -224,11 +252,15 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		w.WriteHeader(res.Status)
 	}
 
+	return render(res, mediaType, w, cfg.TextTemplate, cfg.HtmlTemplate)
+}
+
+func render(res *Response, mediaType string, w http.ResponseWriter, tt *text.Template, ht *html.Template) error {
 	switch mediaType {
 	case SupportedMediaTypeHtml:
 		log.Dev("Rendering html...")
-		if res.TemplateName != "" && cfg.HtmlTemplate != nil {
-			err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Body)
+		if res.TemplateName != "" && ht != nil {
+			err := ht.ExecuteTemplate(w, res.TemplateName, res.Body)
 			if err != nil {
 				return fmt.Errorf("failed to render body HTML template %s: %w", res.TemplateName, err)
 			}
@@ -244,7 +276,7 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		if res.TemplateName != "" {
 			log.Dev("Template name is set, so expecting a template...")
 
-			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
+			if tm := tt.Lookup(res.TemplateName); tm != nil {
 				log.Dev("Executing TextTemplate...")
 				err := tm.ExecuteTemplate(w, res.TemplateName, res.Body)
 				if err != nil {

@@ -38,7 +38,7 @@ var mediaTypeToContentType = map[string]string{
 	SupportedMediaTypeGob:       "application/vnd.golang.gob",
 }
 
-var defaultExtToProposalMap = map[string]string{
+var extToProposalMap = map[string]string{
 	"txt":  SupportedMediaTypePlaintext,
 	"html": SupportedMediaTypeHtml,
 	"htm":  SupportedMediaTypeHtml,
@@ -71,10 +71,10 @@ func mediaTypesEqual(a string, b string) bool {
 	return false
 }
 
-func chooseMediaType(ext string, supported []string, accept iter.Seq[string], ext2proposal map[string]string) string {
+func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) string {
 	if ext != "" {
 		log.Dev("Checking extension: %#v", ext)
-		if a, ok := ext2proposal[ext]; ok {
+		if a, ok := extToProposalMap[ext]; ok {
 			log.Dev("proposing %#v", a)
 			for _, s := range supported {
 				log.Dev("offering  %#v", s)
@@ -86,7 +86,7 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string], ex
 		return ""
 	}
 
-	log.Dev("Checking accept header")
+	log.Dev("Checking accept list")
 	for a := range accept {
 		log.Dev("proposing %#v", a)
 		for _, s := range supported {

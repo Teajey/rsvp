@@ -35,14 +35,18 @@ type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
 	RenderPermanentRedirect bool
-	RenderMovedPermanently bool
+	RenderMovedPermanently *RenderMovedPermanently
 	RenderSeeOtherBlackList []string
 	RenderFoundBlackList []string
-
-	// Has unexported fields.
 }
 
 func DefaultConfig() *Config
+
+type DefaultMovedPermanentlyResponseBody struct {
+	MovedPermanently string
+}
+
+type GenerateMovedPermenentlyResponse func(location string) Response
 
 type Handler interface {
 	ServeHTTP(h http.Header, r *http.Request) Response
@@ -59,6 +63,14 @@ type MiddleHandler interface {
 type MiddleHandlerFunc func(w http.ResponseWriter, r *http.Request) Response
 
 func (f MiddleHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) Response
+
+type RenderMovedPermanently struct {
+	HtmlTemplate *html.Template
+	TextTemplate *text.Template
+	GenerateMovedPermenentlyResponse
+}
+
+func DefaultRenderMovedPermanently() RenderMovedPermanently
 
 type Response struct {
 	Body         any
