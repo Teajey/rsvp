@@ -275,7 +275,7 @@ func TestRss(t *testing.T) {
 	assert.Eq(t, "Content type", "application/rss+xml", resp.Header.Get("Content-Type"))
 
 	s := rec.Body.String() + "\n"
-	assert.TextSnapshot(t, "rss.xml", s)
+	assert.SnapshotText(t, s)
 }
 
 func TestNotFound(t *testing.T) {
