@@ -47,17 +47,47 @@ func Blank() Response
 
 func (r *Response) Html(html string)
 
+func (r Response) StatusAccepted() Response
+
+func (r Response) StatusBadRequest() Response
+
+func (r Response) StatusConflict() Response
+
+func (r Response) StatusCreated(location string) Response
+
+func (r Response) StatusForbidden() Response
+
 func (r Response) StatusFound(location string) Response
+
+func (r Response) StatusGone() Response
+
+func (r Response) StatusInternalServerError() Response
 
 func (r Response) StatusMethodNotAllowed() Response
 
 func (r Response) StatusMovedPermanently(location string) Response
 
+func (r Response) StatusNoContent() Response
+
 func (r Response) StatusNotFound() Response
+
+func (r Response) StatusNotImplemented() Response
+
+func (r Response) StatusNotModified() Response
 
 func (r Response) StatusPermanentRedirect(location string) Response
 
 func (r Response) StatusSeeOther(location string) Response
+
+func (r Response) StatusServiceUnavailable() Response
+
+func (r Response) StatusTemporaryRedirect(location string) Response
+
+func (r Response) StatusTooManyRequests() Response
+
+func (r Response) StatusUnauthorized() Response
+
+func (r Response) StatusUnprocessableEntity() Response
 
 func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) error
 

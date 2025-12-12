@@ -323,64 +323,11 @@ func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) 
 	return nil
 }
 
-// StatusSeeOther sets the response as 303 See Other and sets the Location header.
-//
-// See Other is used for redirection in response to POST requests.
-func (r Response) StatusSeeOther(location string) Response {
-	r.statusCode = http.StatusSeeOther
-	r.redirectLocation = location
-	return r
-}
-
-// StatusFound sets the response as 302 Found and sets the Location header.
-//
-// It indicates that the requested resource has been temporarily moved to the
-// given location.
-func (r Response) StatusFound(location string) Response {
-	r.statusCode = http.StatusFound
-	r.redirectLocation = location
-	return r
-}
-
-// StatusMovedPermanently sets the response as 301 Moved Permanently and sets the Location header.
-//
-// Moved Permanently is intended for GET requests.
-//
-// https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections#permanent_redirections
-func (r Response) StatusMovedPermanently(location string) Response {
-	r.statusCode = http.StatusMovedPermanently
-	r.redirectLocation = location
-	return r
-}
-
-// StatusPermanentRedirect sets the response as 308 Permanent Redirect and sets the Location header.
-//
-// Permanent Redirect is intended for non-GET requests.
-//
-// https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections#permanent_redirections
-func (r Response) StatusPermanentRedirect(location string) Response {
-	r.statusCode = http.StatusPermanentRedirect
-	r.redirectLocation = location
-	return r
-}
-
 // Blank will render as a blank response with no Content-Type.
 //
 // Status 200 by default.
 func Blank() Response {
 	return Response{blankBodyOverride: true}
-}
-
-// StatusNotFound sets the response as 404 Not Found.
-func (r Response) StatusNotFound() Response {
-	r.statusCode = http.StatusNotFound
-	return r
-}
-
-// StatusMethodNotAllowed sets the response as 405 Method Not Allowed.
-func (r Response) StatusMethodNotAllowed() Response {
-	r.statusCode = http.StatusMethodNotAllowed
-	return r
 }
 
 // Html will set [Response.Data] to html using a string, making sure "Content-Type: text/html; charset=utf-8" is set.
