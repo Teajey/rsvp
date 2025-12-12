@@ -36,6 +36,8 @@ type HandlerFunc func(h http.Header, r *http.Request) Response
 
 func (f HandlerFunc) ServeHTTP(h http.Header, r *http.Request) Response
 
+type Html string
+
 type Response struct {
 	Data any
 	TemplateName string
@@ -44,8 +46,6 @@ type Response struct {
 }
 
 func Blank() Response
-
-func (r *Response) Html(html string)
 
 func (r Response) StatusAccepted() Response
 

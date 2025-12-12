@@ -68,6 +68,9 @@ func (res *Response) mediaTypes(cfg Config) iter.Seq[string] {
 		}
 
 		switch res.Data.(type) {
+		case Html:
+			yield(SupportedMediaTypeHtml)
+			return
 		case string:
 			if !yield(SupportedMediaTypePlaintext) {
 				return
@@ -247,7 +250,7 @@ func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) 
 				return fmt.Errorf("failed to render data in HTML template %s: %w", res.TemplateName, err)
 			}
 		} else {
-			_, err := w.Write([]byte(res.Data.(string)))
+			_, err := w.Write([]byte(res.Data.(Html)))
 			if err != nil {
 				return fmt.Errorf("failed to write string as HTML: %w", err)
 			}
@@ -330,13 +333,8 @@ func Blank() Response {
 	return Response{blankBodyOverride: true}
 }
 
-// Html will set [Response.Data] to html using a string, making sure "Content-Type: text/html; charset=utf-8" is set.
+// Html can be used to set [Response.Data].
 //
-// Use rsvp.ServeMux.HtmlTemplate and rsvp.Response.TemplateName to render from an HTML template.
-//
-// TODO: Perhaps it would be more ergonomic if this use case was instead fulfilled by detecting when [Response.Data] is set to template.HTML?
-func (r *Response) Html(html string) {
-	r.Data = html
-	r.predeterminedMediaType = SupportedMediaTypeHtml
-	r.predeterminedContentType = mediaTypeToContentType[SupportedMediaTypeHtml]
-}
+// The wrapped string will be treated as text/html
+// instead of text/plain.
+type Html string

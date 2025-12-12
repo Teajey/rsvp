@@ -373,7 +373,6 @@ func TestSeeOtherCanRender(t *testing.T) {
 
 func TestSeeOtherDoesNotRenderWithoutAccept(t *testing.T) {
 	res := rsvp.Response{Data: "See other"}.StatusSeeOther("/")
-	res.Html("<div></div>")
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
@@ -409,7 +408,6 @@ func TestFoundCanRender(t *testing.T) {
 
 func TestFoundDoesNotRenderHtmlWithoutAccept(t *testing.T) {
 	res := rsvp.Response{Data: "Found"}.StatusFound("/")
-	res.Html("<div></div>")
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
@@ -498,8 +496,7 @@ func TestNotFoundJson(t *testing.T) {
 }
 
 func TestHtmlFromString(t *testing.T) {
-	res := rsvp.Blank()
-	res.Html("<div></div>")
+	res := rsvp.Response{Data: rsvp.Html("<div></div>")}
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
@@ -511,7 +508,7 @@ func TestHtmlFromString(t *testing.T) {
 	assert.Eq(t, "Status code", 200, statusCode)
 	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", res.Data.(string), s)
+	assert.Eq(t, "body contents", res.Data.(rsvp.Html), rsvp.Html(s))
 }
 
 func TestExplicitTextRequestWithoutTextTemplate(t *testing.T) {
