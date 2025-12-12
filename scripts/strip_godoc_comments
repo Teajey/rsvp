@@ -29,6 +29,7 @@ def window(it: Iterator[T], size: int = 2) -> Iterator[list[T]]:
 
 struct = False
 trailing_comment = False
+header = False
 for line, next_line in window(fileinput.input()):
     line = line.removesuffix("\n")
     next_line = next_line.removesuffix("\n")
@@ -37,10 +38,16 @@ for line, next_line in window(fileinput.input()):
         struct = True
     elif struct and line.endswith("}"):
         struct = False
-    elif line.startswith("func"):
+    elif line.startswith("func") or line.startswith("type"):
         trailing_comment = True
     elif next_line[:4].strip() != "":
         trailing_comment = False
+
+    if any(
+        next_line.startswith(word)
+        for word in ["CONSTANTS", "FUNCTIONS", "TYPES", "VARIABLES"]
+    ):
+        header = False
 
     if line.strip().startswith("}"):
         trailing_comment = True
@@ -56,5 +63,8 @@ for line, next_line in window(fileinput.input()):
     elif trailing_comment:
         if line != "" and not line.startswith("    "):
             print(line)
-    else:
+    elif not header:
         print(line)
+
+    if line.startswith("package"):
+        header = True

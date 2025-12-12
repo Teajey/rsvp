@@ -1,46 +1,60 @@
 package rsvp
 
 import (
-	"fmt"
 	"net/http"
+
+	"github.com/Teajey/rsvp/internal/log"
 )
 
-// An rsvp.Handler with access to the writer. Only intended as an
-// adapter for middleware that takes http.ResponseWriter. Care should
-// be taken that the body is not written to, as that must be handled by
-// func (*Response) Write
-type MiddleHandler interface {
+// WriterHandler is a [Handler] with access to [http.ResponseWriter].
+//
+// This interface is primarily intended as an adapter for third-party middleware
+// that requires [http.ResponseWriter].
+//
+// WARNING: Care should be taken that [http.ResponseWriter.WriteHeader] is not used here, as response
+// status is managed by [Response.Write]. Calling WriteHeader will cause incorrect
+// behavior.
+type WriterHandler interface {
 	ServeHTTP(w http.ResponseWriter, r *http.Request) Response
 }
 
-type MiddleHandlerFunc func(w http.ResponseWriter, r *http.Request) Response
+type WriterHandlerFunc func(w http.ResponseWriter, r *http.Request) Response
 
-func (f MiddleHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) Response {
+func (f WriterHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) Response {
 	return f(w, r)
 }
 
-// Can be used to run a MiddleHandler, It will run before rsvp writes to the
-// HTTP response body
-func MiddlewareBeforeWriteResponse(cfg *Config, next MiddleHandler) http.HandlerFunc {
+// Adapt wraps [WriterHandler] and returns the standard [http.HandlerFunc].
+func Adapt(cfg Config, handler WriterHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		response := next.ServeHTTP(w, r)
-		err := response.Write(w, r, cfg)
-		if err != nil {
-			panic(fmt.Sprintf("Failed to write rsvp.Response: %s", err))
+		response := handler.ServeHTTP(w, r)
+		if err := response.Write(w, r, cfg); err != nil {
+			http.Error(w, "RSVP failed to write a response", http.StatusInternalServerError)
+			log.Dev("failed to write a response: %s", err)
 		}
 	}
 }
 
-func middlewareGetArgs(next Handler) MiddleHandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) Response {
-		headers := w.Header()
-		return next.ServeHTTP(headers, r)
-	}
+// AdaptFunc is a convenience that wraps [Adapt] for [WriterHandlerFunc]
+func AdaptFunc(cfg Config, handler func(w http.ResponseWriter, r *http.Request) Response) http.HandlerFunc {
+	return Adapt(cfg, WriterHandlerFunc(handler))
 }
 
-// Middleware adapter for individual handlers. Is useful for
-// adding rsvp to handlers selectively, or plugging in rsvp
-// without the provided ServeMux
-func Middleware(cfg *Config, next Handler) http.HandlerFunc {
-	return MiddlewareBeforeWriteResponse(cfg, middlewareGetArgs(next))
+// toWriterHandler adapts a [Handler] to [WriterHandler]
+func toWriterHandler(h Handler) WriterHandler {
+	return WriterHandlerFunc(func(w http.ResponseWriter, r *http.Request) Response {
+		return h.ServeHTTP(w.Header(), r)
+	})
+}
+
+// AdaptHandler wraps a [Handler] and returns a standard [http.HandlerFunc].
+// Convenience for integrating with net/http.
+func AdaptHandler(cfg Config, h Handler) http.HandlerFunc {
+	return Adapt(cfg, toWriterHandler(h))
+}
+
+// AdaptHandlerFunc wraps a [HandlerFunc] and returns a standard [http.HandlerFunc].
+// Convenience for integrating with net/http.
+func AdaptHandlerFunc(cfg Config, h func(h http.Header, r *http.Request) Response) http.HandlerFunc {
+	return Adapt(cfg, toWriterHandler(HandlerFunc(h)))
 }

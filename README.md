@@ -46,11 +46,11 @@ Not with RSVP 🫠
 
 ```go
 if r.Method != http.MethodPut {
-	return rsvp.Response{Status: http.StatusMethodNotAllowed, Body: "Use PUT"}
+	return rsvp.Response{Data: "Use PUT"}.StatusMethodNotAllowed()
 }
 ```
 
-(Wrapping this with your own convenience method, i.e. `func ErrorMethodNotAllowed(message string) rsvp.Response` is encouraged. You get to decide for yourself how errors are represented)
+(Wrapping this with your own convenience method, i.e. `func ErrorMethodNotAllowed(message string) rsvp.Response` is encouraged. You can decide for yourself how errors are represented)
 
 # Examples
  - You can see it in action on my stupid little blog site, brightscroll.net. For instance, https://brightscroll.net/posts/2025-06-30.md vs. https://brightscroll.net/posts/2025-06-30.md.txt

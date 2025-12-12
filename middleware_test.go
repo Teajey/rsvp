@@ -3,7 +3,6 @@ package rsvp_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"net/http/httputil"
 	"testing"
 
 	"github.com/Teajey/rsvp"
@@ -20,12 +19,12 @@ func (t T) handler(s cookieSetter) rsvp.Response {
 	cookies, err := http.ParseCookie("hello=world")
 	assert.FatalErr(t.t, "cookie parse", err)
 	s(cookies[0])
-	return rsvp.Ok()
+	return rsvp.Blank()
 }
 
 func TestMiddlewareBeforeWriteResponse(t *testing.T) {
-	cfg := rsvp.DefaultConfig()
-	server := httptest.NewServer(rsvp.MiddlewareBeforeWriteResponse(cfg, rsvp.MiddleHandlerFunc(func(w http.ResponseWriter, r *http.Request) rsvp.Response {
+	cfg := rsvp.Config{}
+	server := httptest.NewServer(rsvp.Adapt(cfg, rsvp.WriterHandlerFunc(func(w http.ResponseWriter, r *http.Request) rsvp.Response {
 		setter := func(cookie *http.Cookie) {
 			http.SetCookie(w, cookie)
 		}
@@ -36,8 +35,5 @@ func TestMiddlewareBeforeWriteResponse(t *testing.T) {
 	res, err := http.Get(server.URL)
 	assert.FatalErr(t, "server response", err)
 
-	header, err := httputil.DumpResponse(res, false)
-	assert.FatalErr(t, "dump response", err)
-
-	assert.SnapshotText(t, string(header))
+	assert.Eq(t, "expected cookie header", "hello=world", res.Header.Get("Set-Cookie"))
 }

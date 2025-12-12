@@ -1,6 +1,5 @@
 package rsvp // import "github.com/Teajey/rsvp"
 
-
 CONSTANTS
 
 const (
@@ -12,41 +11,22 @@ const (
 	SupportedMediaTypeGob       string = "application/vnd.golang.gob"
 )
 
-VARIABLES
-
-var AllSupportedTypes = []string{
-	SupportedMediaTypePlaintext,
-	SupportedMediaTypeHtml,
-	SupportedMediaTypeBytes,
-	SupportedMediaTypeJson,
-	SupportedMediaTypeXml,
-	SupportedMediaTypeGob,
-}
-
 FUNCTIONS
 
-func Middleware(cfg *Config, next Handler) http.HandlerFunc
+func Adapt(cfg Config, handler WriterHandler) http.HandlerFunc
 
-func MiddlewareBeforeWriteResponse(cfg *Config, next MiddleHandler) http.HandlerFunc
+func AdaptFunc(cfg Config, handler func(w http.ResponseWriter, r *http.Request) Response) http.HandlerFunc
+
+func AdaptHandler(cfg Config, h Handler) http.HandlerFunc
+
+func AdaptHandlerFunc(cfg Config, h func(h http.Header, r *http.Request) Response) http.HandlerFunc
 
 TYPES
 
 type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
-	RenderPermanentRedirect bool
-	RenderMovedPermanently *RenderMovedPermanently
-	RenderSeeOtherBlackList []string
-	RenderFoundBlackList []string
 }
-
-func DefaultConfig() *Config
-
-type DefaultMovedPermanentlyResponseBody struct {
-	MovedPermanently string
-}
-
-type GenerateMovedPermenentlyResponse func(location string) Response
 
 type Handler interface {
 	ServeHTTP(h http.Header, r *http.Request) Response
@@ -56,53 +36,48 @@ type HandlerFunc func(h http.Header, r *http.Request) Response
 
 func (f HandlerFunc) ServeHTTP(h http.Header, r *http.Request) Response
 
-type MiddleHandler interface {
-	ServeHTTP(w http.ResponseWriter, r *http.Request) Response
-}
-
-type MiddleHandlerFunc func(w http.ResponseWriter, r *http.Request) Response
-
-func (f MiddleHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) Response
-
-type RenderMovedPermanently struct {
-	HtmlTemplate *html.Template
-	TextTemplate *text.Template
-	GenerateMovedPermenentlyResponse
-}
-
-func DefaultRenderMovedPermanently() RenderMovedPermanently
-
 type Response struct {
-	Body         any
+	Data any
 	TemplateName string
-	Status       int
 
 	// Has unexported fields.
 }
 
-func Found(url string, body any) Response
-
-func MovedPermanently(url string) Response
-
-func Ok() Response
-
-func PermanentRedirect(url string) Response
-
-func SeeOther(url string, body any) Response
+func Blank() Response
 
 func (r *Response) Html(html string)
 
-func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error
+func (r Response) StatusFound(location string) Response
+
+func (r Response) StatusMethodNotAllowed() Response
+
+func (r Response) StatusMovedPermanently(location string) Response
+
+func (r Response) StatusNotFound() Response
+
+func (r Response) StatusPermanentRedirect(location string) Response
+
+func (r Response) StatusSeeOther(location string) Response
+
+func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) error
 
 type ServeMux struct {
 	Std    *http.ServeMux
-	Config *Config
+	Config Config
 }
 
 func NewServeMux() *ServeMux
 
 func (m *ServeMux) Handle(pattern string, handler Handler)
 
-func (m *ServeMux) HandleFunc(pattern string, handler HandlerFunc)
+func (m *ServeMux) HandleFunc(pattern string, handler func(http.Header, *http.Request) Response)
 
 func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request)
+
+type WriterHandler interface {
+	ServeHTTP(w http.ResponseWriter, r *http.Request) Response
+}
+
+type WriterHandlerFunc func(w http.ResponseWriter, r *http.Request) Response
+
+func (f WriterHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) Response

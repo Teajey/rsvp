@@ -28,9 +28,9 @@ func msgpackHandler(mediaType string, w http.ResponseWriter, res *Response) (boo
 	}
 
 	log.Dev("Rendering msgpack...")
-	err := msgpack.NewEncoder(w).Encode(res.Body)
+	err := msgpack.NewEncoder(w).Encode(res.Data)
 	if err != nil {
-		return true, fmt.Errorf("failed to render body as msgpack: %w", err)
+		return true, fmt.Errorf("failed to render data as msgpack: %w", err)
 	}
 
 	return true, nil
