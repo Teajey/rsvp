@@ -44,8 +44,7 @@ type Response struct {
 
 	statusCode int
 
-	predeterminedMediaType   string
-	predeterminedContentType string
+	predeterminedMediaType string
 
 	blankBodyOverride bool
 
@@ -152,13 +151,7 @@ func (res *Response) determineMediaType(ext, accept string, supported []string) 
 }
 
 func (res *Response) determineContentType(mediaType string, h http.Header) {
-	var contentType string
-	if res.predeterminedMediaType != "" {
-		// In this case, assuming mediaType == res.predeterminedMediaType
-		contentType = res.predeterminedContentType
-	} else {
-		contentType = mediaTypeToContentType[mediaType]
-	}
+	contentType := mediaTypeToContentType[mediaType]
 
 	log.Dev("Setting content-type to %#v", contentType)
 	h.Set("Content-Type", contentType)
