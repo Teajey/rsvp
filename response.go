@@ -1,3 +1,14 @@
+// Package rsvp is a Go web framework built around content negotiation.
+//
+// The framework automatically negotiates response format based on the Accept
+// header, supporting JSON, XML, HTML, plain text, binary, Gob,
+// and MessagePack (using -tags=rsvp_msgpack).
+// This content negotiation extends to ALL responses, including redirects,
+// allowing you to provide rich feedback in many contexts.
+//
+// This makes rsvp particularly well-suited for APIs that serve multiple clients
+// (browsers, mobile apps, CLI tools) and for taking advantage of principles such
+// as REST and progressive enhancement.
 package rsvp
 
 import (
@@ -18,32 +29,36 @@ import (
 )
 
 type Response struct {
-	// Beware that the default value of nil will render as application/json "null\n" rather
-	// than the expected empty body. Set Body to "" to return a blank response.
+	// Data is the raw data of the response payload to be rendered.
 	//
-	// See the tests TestNilBody and TestEmptyStringBody in response_test.go.
-	Body         any
+	// IMPORTANT: A nil Data renders as JSON "null\n", not an empty response.
+	// Use Data: "" for a blank response body.
+	Data any
+	// The template that this Response may attempt to select from
+	// [Config.HtmlTemplate] or [Config.TextTemplate]
+	//
+	// It is not an error if the template is not found for one of the two templates; other formats will be attempted.
+	//
+	// TODO: Perhaps a warning should be issued to stderr if this fails to match on both templates?
 	TemplateName string
-	Status       int
 
-	predeterminedMediaType   string
-	predeterminedContentType string
+	statusCode int
+
+	predeterminedMediaType string
 
 	blankBodyOverride bool
 
-	found             string
-	seeOther          string
-	movedPermanently  string
-	permanentRedirect string
+	redirectLocation string
 }
 
 func (res *Response) isBlank() bool {
-	return res.Body == nil && res.blankBodyOverride
+	// TODO: Shouldn't this just ignore res.Data since it's an override?
+	return res.Data == nil && res.blankBodyOverride
 }
 
 var extendedMediaTypes []string = nil
 
-func (res *Response) mediaTypes(cfg *Config) iter.Seq[string] {
+func (res *Response) mediaTypes(cfg Config) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		if res.predeterminedMediaType != "" {
 			log.Dev("Overriding media-types with %s", res.predeterminedMediaType)
@@ -51,7 +66,10 @@ func (res *Response) mediaTypes(cfg *Config) iter.Seq[string] {
 			return
 		}
 
-		switch res.Body.(type) {
+		switch res.Data.(type) {
+		case Html:
+			yield(SupportedMediaTypeHtml)
+			return
 		case string:
 			if !yield(SupportedMediaTypePlaintext) {
 				return
@@ -95,76 +113,53 @@ func (res *Response) mediaTypes(cfg *Config) iter.Seq[string] {
 	}
 }
 
-type RenderMovedPermanently struct {
-	HtmlTemplate *html.Template
-	TextTemplate *text.Template
-	GenerateMovedPermenentlyResponse
-}
-
-type GenerateMovedPermenentlyResponse func(location string) Response
-
-type DefaultMovedPermanentlyResponseBody struct {
-	MovedPermanently string
-}
-
-func DefaultRenderMovedPermanently() RenderMovedPermanently {
-	return RenderMovedPermanently{
-		HtmlTemplate: html.Must(html.New("moved").Parse(`<a href="{{.MovedPermanently}}">Moved Permanently</a>\n\n`)),
-		TextTemplate: text.Must(text.New("moved").Parse(`This resource has Moved Permanently to a new location: {{.MovedPermanently}}\n\n`)),
-		GenerateMovedPermenentlyResponse: func(location string) Response {
-			return Response{
-				Body: DefaultMovedPermanentlyResponseBody{
-					MovedPermanently: location,
-				},
-				TemplateName: "moved",
-			}
-		},
-	}
-}
-
 // Settings for writing the rsvp.Response
 type Config struct {
+	// HtmlTemplate is used by [Response.Write] to potentially render its
+	// data to a given HTML template.
 	HtmlTemplate *html.Template
+	// TextTemplate is used by [Response.Write] to potentially render its
+	// data to a given text template.
 	TextTemplate *text.Template
-
-	// Determines whether a response is rendered in a 308 Permanent Redirect response.
-	//
-	// In cases where a legacy resource is retained, this is useful.
-	RenderPermanentRedirect bool
-	// Determines whether a response is rendered in a 301 Moved Permanently response.
-	//
-	// In cases where a legacy resource is retained, this is useful.
-	RenderMovedPermanently *RenderMovedPermanently
-	// Determines which media types will not be rendered in a 303 See Other response.
-	RenderSeeOtherBlackList []string
-	// Determines which media types will not be rendered in a 302 Found response.
-	RenderFoundBlackList []string
-}
-
-// This sets some non-trivial, non-zero defaults:
-//   - RenderSeeOtherBlackList: []{"text/html"},
-//   - RenderFoundBlackList:    []{"text/html"},
-//   - RenderMovedPermanently:  &DefaultRenderMovedPermanently(),
-func DefaultConfig() *Config {
-	renderMovedPermanently := DefaultRenderMovedPermanently()
-	return &Config{
-		RenderSeeOtherBlackList: []string{SupportedMediaTypeHtml},
-		RenderFoundBlackList:    []string{SupportedMediaTypeHtml},
-		RenderMovedPermanently:  &renderMovedPermanently,
-	}
 }
 
 type mediaTypeExtensionHandler = func(mediaType string, w http.ResponseWriter, res *Response) (bool, error)
 
 var mediaTypeExtensionHandlers []mediaTypeExtensionHandler = nil
 
-func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) error {
-	log.Dev("config: %#v", cfg)
+func (res *Response) determineSupported(cfg Config) []string {
+	supported := slices.Collect(res.mediaTypes(cfg))
+	log.Dev("supported %v", supported)
 
-	if !cfg.RenderPermanentRedirect && res.permanentRedirect != "" {
-		http.Redirect(w, r, res.permanentRedirect, http.StatusPermanentRedirect)
-		return nil
+	return supported
+}
+
+func determineExt(r *http.Request) string {
+	var ext string
+	if r.Method == http.MethodGet {
+		ext = strings.TrimPrefix(filepath.Ext(r.URL.Path), ".")
 	}
+
+	return ext
+}
+
+func (res *Response) determineMediaType(ext, accept string, supported []string) string {
+	mediaType := chooseMediaType(ext, supported, content.ParseAccept(accept))
+	log.Dev("mediaType %#v", mediaType)
+
+	return mediaType
+}
+
+func (res *Response) determineContentType(mediaType string, h http.Header) {
+	contentType := mediaTypeToContentType[mediaType]
+
+	log.Dev("Setting content-type to %#v", contentType)
+	h.Set("Content-Type", contentType)
+}
+
+// Write the [Response] to the [http.ResponseWriter] with the given [Config].
+func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) error {
+	log.Dev("config: %#v", cfg)
 
 	h := w.Header()
 
@@ -180,16 +175,30 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 		}
 	}
 
-	supported := slices.Collect(res.mediaTypes(cfg))
-	log.Dev("supported %v", supported)
+	ext := determineExt(r)
+	supported := res.determineSupported(cfg)
+	mediaType := res.determineMediaType(ext, accept, supported)
 
-	var ext string
-	if r.Method == http.MethodGet {
-		ext = strings.TrimPrefix(filepath.Ext(r.URL.Path), ".")
+	if 300 <= res.statusCode && res.statusCode < 400 {
+		log.Dev("Redirect")
+
+		h.Set("Location", res.redirectLocation)
+
+		if res.isBlank() || accept == "" {
+			log.Dev("Redirect returning empty")
+			w.WriteHeader(res.statusCode)
+			return nil
+		}
+
+		supported := res.determineSupported(cfg)
+		mediaType := res.determineMediaType(ext, accept, supported)
+
+		res.determineContentType(mediaType, h)
+
+		w.WriteHeader(res.statusCode)
+
+		return render(res, mediaType, w, cfg)
 	}
-
-	mediaType := chooseMediaType(ext, supported, content.ParseAccept(accept))
-	log.Dev("mediaType %#v", mediaType)
 
 	if mediaType == "" {
 		if ext != "" {
@@ -197,31 +206,14 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 			return nil
 		}
 
-		res.Status = http.StatusNotAcceptable
+		res.statusCode = http.StatusNotAcceptable
 		log.Dev("NotAcceptable. Ignoring Accept header...")
 		mediaType = chooseMediaType(ext, supported, content.ParseAccept(""))
 		log.Dev("new mediaType %#v", mediaType)
 	}
 
-	if cfg.RenderMovedPermanently != nil && res.movedPermanently != "" {
-		response := cfg.RenderMovedPermanently.GenerateMovedPermenentlyResponse(res.movedPermanently)
-		h.Set("Location", res.movedPermanently)
-		w.WriteHeader(http.StatusMovedPermanently)
-		return render(&response, mediaType, w, cfg.RenderMovedPermanently.TextTemplate, cfg.RenderMovedPermanently.HtmlTemplate)
-	}
-
 	if mediaType == "text/plain" && cfg.TextTemplate == nil && res.TemplateName != "" {
 		w.WriteHeader(http.StatusNotFound)
-		return nil
-	}
-
-	// If the client's getting HTML they're probably using a browser which will
-	// automatically follow this SeeOther. We shouldn't bother rendering anything.
-	if res.seeOther != "" && (slices.Contains(cfg.RenderSeeOtherBlackList, mediaType) || res.isBlank()) {
-		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
-		return nil
-	} else if res.found != "" && (slices.Contains(cfg.RenderFoundBlackList, mediaType) || res.isBlank()) {
-		http.Redirect(w, r, res.found, http.StatusFound)
 		return nil
 	}
 
@@ -231,41 +223,27 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg *Config) 
 	}
 
 	if contentType == "" {
-		if res.predeterminedMediaType != "" {
-			// In this case, assuming mediaType == res.predeterminedMediaType
-			contentType = res.predeterminedContentType
-		} else {
-			contentType = mediaTypeToContentType[mediaType]
-		}
-
-		log.Dev("Setting content-type to %#v", contentType)
-		h.Set("Content-Type", contentType)
+		res.determineContentType(mediaType, h)
 	}
 
-	if res.seeOther != "" {
-		http.Redirect(w, r, res.seeOther, http.StatusSeeOther)
-	} else if res.found != "" {
-		http.Redirect(w, r, res.found, http.StatusFound)
+	if res.statusCode != 0 {
+		w.WriteHeader(res.statusCode)
 	}
 
-	if res.Status != 0 {
-		w.WriteHeader(res.Status)
-	}
-
-	return render(res, mediaType, w, cfg.TextTemplate, cfg.HtmlTemplate)
+	return render(res, mediaType, w, cfg)
 }
 
-func render(res *Response, mediaType string, w http.ResponseWriter, tt *text.Template, ht *html.Template) error {
+func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) error {
 	switch mediaType {
 	case SupportedMediaTypeHtml:
 		log.Dev("Rendering html...")
-		if res.TemplateName != "" && ht != nil {
-			err := ht.ExecuteTemplate(w, res.TemplateName, res.Body)
+		if res.TemplateName != "" && cfg.HtmlTemplate != nil {
+			err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Data)
 			if err != nil {
-				return fmt.Errorf("failed to render body HTML template %s: %w", res.TemplateName, err)
+				return fmt.Errorf("failed to render data in HTML template %s: %w", res.TemplateName, err)
 			}
 		} else {
-			_, err := w.Write([]byte(res.Body.(string)))
+			_, err := w.Write([]byte(res.Data.(Html)))
 			if err != nil {
 				return fmt.Errorf("failed to write string as HTML: %w", err)
 			}
@@ -276,11 +254,11 @@ func render(res *Response, mediaType string, w http.ResponseWriter, tt *text.Tem
 		if res.TemplateName != "" {
 			log.Dev("Template name is set, so expecting a template...")
 
-			if tm := tt.Lookup(res.TemplateName); tm != nil {
+			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
 				log.Dev("Executing TextTemplate...")
-				err := tm.ExecuteTemplate(w, res.TemplateName, res.Body)
+				err := tm.ExecuteTemplate(w, res.TemplateName, res.Data)
 				if err != nil {
-					return fmt.Errorf("failed to render body as text template %s: %w", res.TemplateName, err)
+					return fmt.Errorf("failed to render data in text template %s: %w", res.TemplateName, err)
 				}
 				break
 			}
@@ -289,41 +267,41 @@ func render(res *Response, mediaType string, w http.ResponseWriter, tt *text.Tem
 		}
 		log.Dev("Not using a template because either TextTemplate or TemplateName is not set...")
 
-		if body, ok := res.Body.(string); ok {
-			log.Dev("Can write text directly because it is a string...")
-			_, err := w.Write([]byte(body))
+		if data, ok := res.Data.(string); ok {
+			log.Dev("Can write data directly because it is a string...")
+			_, err := w.Write([]byte(data))
 			if err != nil {
-				return fmt.Errorf("failed to render body as plain-text string: %w", err)
+				return fmt.Errorf("failed to render data as string: %w", err)
 			}
 			break
 		}
 
-		return fmt.Errorf("trying to render body as %s but this type is not supported for strings: %#v", SupportedMediaTypePlaintext, res.Body)
+		return fmt.Errorf("trying to render data as %s but this type is not supported: %#v", SupportedMediaTypePlaintext, res.Data)
 	case SupportedMediaTypeJson:
 		log.Dev("Rendering json...")
-		err := json.NewEncoder(w).Encode(res.Body)
+		err := json.NewEncoder(w).Encode(res.Data)
 		if err != nil {
-			return fmt.Errorf("failed to render body as JSON: %w", err)
+			return fmt.Errorf("failed to render data as JSON: %w", err)
 		}
 	case SupportedMediaTypeXml:
 		log.Dev("Rendering xml...")
 		enc := xml.NewEncoder(w)
 		enc.Indent("", "   ")
-		err := enc.Encode(res.Body)
+		err := enc.Encode(res.Data)
 		if err != nil {
-			return fmt.Errorf("failed to render body as XML: %w", err)
+			return fmt.Errorf("failed to render data as XML: %w", err)
 		}
 	case SupportedMediaTypeBytes:
 		log.Dev("Rendering bytes...")
-		_, err := w.Write(res.Body.([]byte))
+		_, err := w.Write(res.Data.([]byte))
 		if err != nil {
-			return fmt.Errorf("failed to render body as bytes: %w", err)
+			return fmt.Errorf("failed to render data as bytes: %w", err)
 		}
 	case SupportedMediaTypeGob:
 		log.Dev("Rendering gob...")
-		err := gob.NewEncoder(w).Encode(res.Body)
+		err := gob.NewEncoder(w).Encode(res.Data)
 		if err != nil {
-			return fmt.Errorf("failed to render body as encoding/gob: %w", err)
+			return fmt.Errorf("failed to render data as encoding/gob: %w", err)
 		}
 	default:
 		for _, handler := range mediaTypeExtensionHandlers {
@@ -341,54 +319,15 @@ func render(res *Response, mediaType string, w http.ResponseWriter, tt *text.Tem
 	return nil
 }
 
-// Will redirect to the given URL after writing the response body.
+// Blank will render as a blank response with no Content-Type.
 //
-// Except for rendering HTML, the body will still be rendered in
-// this case. For instance, if the request was a JSON PUT from
-// the commandline it's helpful to see the result without having
-// to manually follow the Location header.
-func SeeOther(url string, body any) Response {
-	return Response{
-		Body:     body,
-		seeOther: url,
-
-		blankBodyOverride: body == nil,
-	}
-}
-
-func Found(url string, body any) Response {
-	return Response{
-		Body:  body,
-		found: url,
-
-		blankBodyOverride: body == nil,
-	}
-}
-
-// Will perform an immediate 301 using the given URL.
-func MovedPermanently(url string) Response {
-	return Response{movedPermanently: url}
-}
-
-// Will perform an immediate 308 using the given URL.
-//
-// 308 is intended for non-GET links/operations.
-//
-// https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections#permanent_redirections
-func PermanentRedirect(url string) Response {
-	return Response{permanentRedirect: url}
-}
-
-// Returns a blank 200 OK response
-func Ok() Response {
+// Status 200 by default.
+func Blank() Response {
 	return Response{blankBodyOverride: true}
 }
 
-// Set body to html using a string, making sure "Content-Type: text/html; charset=utf-8" is set.
+// Html can be used to set [Response.Data].
 //
-// Use rsvp.ServeMux.HtmlTemplate and rsvp.Response.TemplateName to render from an HTML template.
-func (r *Response) Html(html string) {
-	r.Body = html
-	r.predeterminedMediaType = SupportedMediaTypeHtml
-	r.predeterminedContentType = mediaTypeToContentType[SupportedMediaTypeHtml]
-}
+// The wrapped string will be treated as text/html
+// instead of text/plain.
+type Html string

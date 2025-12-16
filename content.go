@@ -16,18 +16,6 @@ const (
 	SupportedMediaTypeGob       string = "application/vnd.golang.gob"
 )
 
-// Can be used to place every supported type on:
-//   - Config.RenderSeeOtherBlackList
-//   - Config.RenderFoundBlackList
-var AllSupportedTypes = []string{
-	SupportedMediaTypePlaintext,
-	SupportedMediaTypeHtml,
-	SupportedMediaTypeBytes,
-	SupportedMediaTypeJson,
-	SupportedMediaTypeXml,
-	SupportedMediaTypeGob,
-}
-
 var mediaTypeToContentType = map[string]string{
 	// TODO: Why did I insist on specifying utf-8 here? There should be note. I think it might just be because it's inline with what net/http does
 	SupportedMediaTypePlaintext: "text/plain; charset=utf-8",
