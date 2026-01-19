@@ -26,6 +26,10 @@ TYPES
 type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
+	JsonPrefix string
+	JsonIndent string
+	XmlPrefix string
+	XmlIndent string
 }
 
 type Handler interface {

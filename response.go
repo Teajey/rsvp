@@ -121,6 +121,15 @@ type Config struct {
 	// TextTemplate is used by [Response.Write] to potentially render its
 	// data to a given text template.
 	TextTemplate *text.Template
+
+	// JsonPrefix is used to set [json.Encoder.SetIndent]
+	JsonPrefix string
+	// JsonIndent is used to set [json.Encoder.SetIndent]
+	JsonIndent string
+	// XmlPrefix is used to set [xml.Encoder.Indent]
+	XmlPrefix string
+	// XmlIndent is used to set [xml.Encoder.Indent]
+	XmlIndent string
 }
 
 type mediaTypeExtensionHandler = func(mediaType string, w http.ResponseWriter, res *Response) (bool, error)
@@ -279,14 +288,16 @@ func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) 
 		return fmt.Errorf("trying to render data as %s but this type is not supported: %#v", SupportedMediaTypePlaintext, res.Data)
 	case SupportedMediaTypeJson:
 		log.Dev("Rendering json...")
-		err := json.NewEncoder(w).Encode(res.Data)
+		enc := json.NewEncoder(w)
+		enc.SetIndent(cfg.JsonPrefix, cfg.JsonIndent)
+		err := enc.Encode(res.Data)
 		if err != nil {
 			return fmt.Errorf("failed to render data as JSON: %w", err)
 		}
 	case SupportedMediaTypeXml:
 		log.Dev("Rendering xml...")
 		enc := xml.NewEncoder(w)
-		enc.Indent("", "   ")
+		enc.Indent(cfg.XmlPrefix, cfg.XmlIndent)
 		err := enc.Encode(res.Data)
 		if err != nil {
 			return fmt.Errorf("failed to render data as XML: %w", err)

@@ -263,7 +263,9 @@ func TestRss(t *testing.T) {
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/rss+xml")
 
-	cfg := rsvp.Config{}
+	cfg := rsvp.Config{
+		XmlIndent: "   ",
+	}
 
 	err := res.Write(rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
