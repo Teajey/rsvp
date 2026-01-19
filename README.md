@@ -23,6 +23,7 @@ type Handler interface {
    - [x] `application/json`
    - [x] `text/html`
    - [x] `text/plain`
+   - [x] `text/csv` (by implementing the rsvp.Csv interface)
    - [x] `application/octet-stream`
    - [x] `application/xml`
    - [x] `application/vnd.golang.gob` (Golang's [encoding/gob](https://go.dev/blog/gob))

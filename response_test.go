@@ -2,9 +2,11 @@ package rsvp_test
 
 import (
 	"bytes"
+	"encoding/csv"
 	html "html/template"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	text "text/template"
 
@@ -886,4 +888,34 @@ func TestRequestGobEmptyMapUsingFileExtension(t *testing.T) {
 	assert.Eq(t, "Content type", "application/vnd.golang.gob", resp.Header.Get("Content-Type"))
 	body := rec.Body.Bytes()
 	assert.SlicesEq(t, "body contents", []byte{0xd, 0x7f, 0x4, 0x1, 0x2, 0xff, 0x80, 0x0, 0x1, 0xc, 0x1, 0xc, 0x0, 0x0, 0x4, 0xff, 0x80, 0x0, 0x0}, body)
+}
+
+type CsvResource struct {
+	Status string
+	Number int
+}
+
+func (r CsvResource) MarshalCsv(w *csv.Writer) error {
+	return w.WriteAll([][]string{
+		{"status", "number"},
+		{r.Status, strconv.Itoa(r.Number)},
+	})
+}
+
+func TestRequestCsv(t *testing.T) {
+	res := rsvp.Response{Data: CsvResource{
+		Status: "OK",
+		Number: 3,
+	}}
+	req := httptest.NewRequest("GET", "/resource.csv", nil)
+	rec := httptest.NewRecorder()
+
+	err := res.Write(rec, req, rsvp.Config{})
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	assert.Eq(t, "Status code", http.StatusOK, resp.StatusCode)
+	assert.Eq(t, "Content type", "text/csv; charset=utf-8", resp.Header.Get("Content-Type"))
+	body := rec.Body.String()
+	assert.Eq(t, "body contents", "status,number\nOK,3\n", body)
 }

@@ -12,6 +12,7 @@
 package rsvp
 
 import (
+	"encoding/csv"
 	"encoding/gob"
 	"encoding/json"
 	"encoding/xml"
@@ -85,6 +86,13 @@ func (res *Response) mediaTypes(cfg Config) iter.Seq[string] {
 
 		if !yield(SupportedMediaTypeXml) {
 			return
+		}
+
+		_, ok := res.Data.(Csv)
+		if ok {
+			if !yield(SupportedMediaTypeCsv) {
+				return
+			}
 		}
 
 		if !yield(SupportedMediaTypeGob) {
@@ -301,6 +309,17 @@ func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) 
 		err := enc.Encode(res.Data)
 		if err != nil {
 			return fmt.Errorf("failed to render data as XML: %w", err)
+		}
+	case SupportedMediaTypeCsv:
+		data, ok := res.Data.(Csv)
+		if !ok {
+			return fmt.Errorf("trying to write %#v, but it does not implement rsvp.Csv", res.Data)
+		}
+		log.Dev("Rendering csv...")
+		wr := csv.NewWriter(w)
+		err := data.MarshalCsv(wr)
+		if err != nil {
+			return fmt.Errorf("failed to render data as CSV: %w", err)
 		}
 	case SupportedMediaTypeBytes:
 		log.Dev("Rendering bytes...")

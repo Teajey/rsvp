@@ -5,6 +5,7 @@ CONSTANTS
 const (
 	SupportedMediaTypePlaintext string = "text/plain"
 	SupportedMediaTypeHtml      string = "text/html"
+	SupportedMediaTypeCsv       string = "text/csv"
 	SupportedMediaTypeBytes     string = "application/octet-stream"
 	SupportedMediaTypeJson      string = "application/json"
 	SupportedMediaTypeXml       string = "application/xml"
@@ -30,6 +31,10 @@ type Config struct {
 	JsonIndent string
 	XmlPrefix string
 	XmlIndent string
+}
+
+type Csv interface {
+	MarshalCsv(w *csv.Writer) error
 }
 
 type Handler interface {
