@@ -10,6 +10,7 @@ import (
 const (
 	SupportedMediaTypePlaintext string = "text/plain"
 	SupportedMediaTypeHtml      string = "text/html"
+	SupportedMediaTypeCsv       string = "text/csv"
 	SupportedMediaTypeBytes     string = "application/octet-stream"
 	SupportedMediaTypeJson      string = "application/json"
 	SupportedMediaTypeXml       string = "application/xml"
@@ -20,6 +21,7 @@ var mediaTypeToContentType = map[string]string{
 	// TODO: Why did I insist on specifying utf-8 here? There should be note. I think it might just be because it's inline with what net/http does
 	SupportedMediaTypePlaintext: "text/plain; charset=utf-8",
 	SupportedMediaTypeHtml:      "text/html; charset=utf-8",
+	SupportedMediaTypeCsv:       "text/csv; charset=utf-8",
 	SupportedMediaTypeBytes:     "application/octet-stream",
 	SupportedMediaTypeJson:      "application/json",
 	SupportedMediaTypeXml:       "application/xml",
@@ -30,6 +32,7 @@ var extToProposalMap = map[string]string{
 	"txt":  SupportedMediaTypePlaintext,
 	"html": SupportedMediaTypeHtml,
 	"htm":  SupportedMediaTypeHtml,
+	"csv":  SupportedMediaTypeCsv,
 	"json": SupportedMediaTypeJson,
 	"xml":  SupportedMediaTypeXml,
 	"bin":  SupportedMediaTypeBytes,

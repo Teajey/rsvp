@@ -1,9 +1,8 @@
 package rsvp
 
 import (
+	stdlog "log"
 	"net/http"
-
-	"github.com/Teajey/rsvp/internal/log"
 )
 
 // WriterHandler is a [Handler] with access to [http.ResponseWriter].
@@ -30,7 +29,7 @@ func Adapt(cfg Config, handler WriterHandler) http.HandlerFunc {
 		response := handler.ServeHTTP(w, r)
 		if err := response.Write(w, r, cfg); err != nil {
 			http.Error(w, "RSVP failed to write a response", http.StatusInternalServerError)
-			log.Dev("failed to write a response: %s", err)
+			stdlog.Printf("[ERROR] RSVP failed to write a response: %s", err)
 		}
 	}
 }

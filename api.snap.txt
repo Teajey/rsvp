@@ -5,6 +5,7 @@ CONSTANTS
 const (
 	SupportedMediaTypePlaintext string = "text/plain"
 	SupportedMediaTypeHtml      string = "text/html"
+	SupportedMediaTypeCsv       string = "text/csv"
 	SupportedMediaTypeBytes     string = "application/octet-stream"
 	SupportedMediaTypeJson      string = "application/json"
 	SupportedMediaTypeXml       string = "application/xml"
@@ -26,6 +27,14 @@ TYPES
 type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
+	JsonPrefix string
+	JsonIndent string
+	XmlPrefix string
+	XmlIndent string
+}
+
+type Csv interface {
+	MarshalCsv(w *csv.Writer) error
 }
 
 type Handler interface {
@@ -68,6 +77,8 @@ func (r Response) StatusMethodNotAllowed() Response
 func (r Response) StatusMovedPermanently(location string) Response
 
 func (r Response) StatusNoContent() Response
+
+func (r Response) StatusNotAcceptable() Response
 
 func (r Response) StatusNotFound() Response
 
