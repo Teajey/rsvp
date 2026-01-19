@@ -73,6 +73,8 @@ func (r Response) StatusMovedPermanently(location string) Response
 
 func (r Response) StatusNoContent() Response
 
+func (r Response) StatusNotAcceptable() Response
+
 func (r Response) StatusNotFound() Response
 
 func (r Response) StatusNotImplemented() Response

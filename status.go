@@ -144,6 +144,16 @@ func (r Response) StatusMethodNotAllowed() Response {
 	return r
 }
 
+// StatusNotAcceptable sets the response as 406 Not Acceptable.
+//
+// It indicates that the server cannot produce a response matching the list of
+// acceptable values defined in the request's proactive content negotiation
+// headers.
+func (r Response) StatusNotAcceptable() Response {
+	r.statusCode = http.StatusNotAcceptable
+	return r
+}
+
 // StatusConflict sets the response as 409 Conflict.
 //
 // It indicates that the request conflicts with the current state of the
