@@ -2,20 +2,16 @@
 
 My "functional" wrapper around Golang's [`net/http` server stuff](https://pkg.go.dev/net/http#hdr-Servers)
 
-The default `net/http` interface:
+The default `net/http` handler interface:
 
 ```go
-type Handler interface {
-	ServeHTTP(ResponseWriter, *Request)
-}
+ServeHTTP(http.ResponseWriter, *http.Request)
 ```
 
-RSVP's interface:
+RSVP's handler interface:
 
 ```go
-type Handler interface {
-	ServeHTTP(h http.Header, r *http.Request) Response
-}
+ServeHTTP(rsvp.ResponseWriter, *http.Request) rsvp.Response
 ```
 
 ## Features
