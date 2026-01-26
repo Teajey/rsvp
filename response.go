@@ -35,10 +35,12 @@ type Response struct {
 	// IMPORTANT: A nil Data renders as JSON "null\n", not an empty response.
 	// Use Data: "" for a blank response body.
 	Data any
-	// The template that this Response may attempt to select from
-	// [Config.HtmlTemplate] or [Config.TextTemplate]
+	// TemplateName sets the template that this Response may attempt to select from
+	// [Config.HtmlTemplate] or [Config.TextTemplate],
 	//
-	// It is not an error if the template is not found for one of the two templates; other formats will be attempted.
+	// [ResponseWriter.DefaultTemplateName] may also be used to set a default once on a handler.
+	//
+	// It is not an error if a template is not found for one of the two templates; other formats will be attempted.
 	//
 	// TODO: Perhaps a warning should be issued to stderr if this fails to match on both templates?
 	TemplateName string
@@ -50,6 +52,30 @@ type Response struct {
 	blankBodyOverride bool
 
 	redirectLocation string
+}
+
+// ResponseWriter is a simplified equivalent of [http.ResponseWriter]
+type ResponseWriter interface {
+	// Header is equivalent to [http.ResponseWriter.Header]
+	Header() http.Header
+
+	// DefaultTemplateName is used to associate a default template name with the current handler.
+	//
+	// It may be overridden by [Response.TemplateName].
+	DefaultTemplateName(name string)
+}
+
+type response struct {
+	http.ResponseWriter
+	defaultTemplateName string
+}
+
+func (r *response) Header() http.Header {
+	return r.ResponseWriter.Header()
+}
+
+func (r *response) DefaultTemplateName(name string) {
+	r.defaultTemplateName = name
 }
 
 func (res *Response) isBlank() bool {

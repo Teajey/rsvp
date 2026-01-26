@@ -357,6 +357,24 @@ func TestNilBody(t *testing.T) {
 	assert.Eq(t, "body contents", `null`+"\n", s)
 }
 
+func TestNilBodyAcceptText(t *testing.T) {
+	res := rsvp.Response{Data: nil}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "text/plain")
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.Config{}
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", `null`+"\n", s)
+}
+
 func TestSeeOtherCanRender(t *testing.T) {
 	res := rsvp.Response{Data: "POST successful"}.StatusSeeOther("/")
 	req := httptest.NewRequest("POST", "/", nil)
