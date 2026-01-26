@@ -16,6 +16,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	html "html/template"
 	"iter"
@@ -70,17 +71,12 @@ type response struct {
 	defaultTemplateName string
 }
 
-func (r *response) Header() http.Header {
-	return r.ResponseWriter.Header()
-}
-
 func (r *response) DefaultTemplateName(name string) {
 	r.defaultTemplateName = name
 }
 
 func (res *Response) isBlank() bool {
-	// TODO: Shouldn't this just ignore res.Data since it's an override?
-	return res.Data == nil && res.blankBodyOverride
+	return res.blankBodyOverride
 }
 
 var extendedMediaTypes []string = nil
@@ -132,13 +128,13 @@ func (res *Response) mediaTypes(cfg Config) iter.Seq[string] {
 		}
 
 		if res.TemplateName != "" {
-			if cfg.HtmlTemplate != nil && cfg.HtmlTemplate.Lookup(res.TemplateName) != nil {
+			if cfg.HtmlTemplate != nil {
 				if !yield(SupportedMediaTypeHtml) {
 					return
 				}
 			}
 
-			if cfg.TextTemplate != nil && cfg.TextTemplate.Lookup(res.TemplateName) != nil {
+			if cfg.TextTemplate != nil {
 				if !yield(SupportedMediaTypePlaintext) {
 					return
 				}
@@ -276,20 +272,31 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) e
 	return render(res, mediaType, w, cfg)
 }
 
+var ErrFailedToMatchTextTemplate = errors.New("TemplateName was set, but it failed to match within TextTemplate")
+var ErrFailedToMatchHtmlTemplate = errors.New("TemplateName was set, but it failed to match within HtmlTemplate")
+
 func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) error {
 	switch mediaType {
 	case SupportedMediaTypeHtml:
 		log.Dev("Rendering html...")
-		if res.TemplateName != "" && cfg.HtmlTemplate != nil {
-			err := cfg.HtmlTemplate.ExecuteTemplate(w, res.TemplateName, res.Data)
-			if err != nil {
-				return fmt.Errorf("failed to render data in HTML template %s: %w", res.TemplateName, err)
+		if res.TemplateName != "" {
+			log.Dev("Template name is set, so expecting a template...")
+
+			if tm := cfg.HtmlTemplate.Lookup(res.TemplateName); tm != nil {
+				log.Dev("Executing HtmlTemplate...")
+				err := tm.ExecuteTemplate(w, res.TemplateName, res.Data)
+				if err != nil {
+					return fmt.Errorf("failed to render data in html template %s: %w", res.TemplateName, err)
+				}
+				break
 			}
-		} else {
-			_, err := w.Write([]byte(res.Data.(Html)))
-			if err != nil {
-				return fmt.Errorf("failed to write string as HTML: %w", err)
-			}
+
+			return ErrFailedToMatchHtmlTemplate
+		}
+
+		_, err := w.Write([]byte(res.Data.(Html)))
+		if err != nil {
+			return fmt.Errorf("failed to write string as HTML: %w", err)
 		}
 	case SupportedMediaTypePlaintext:
 		log.Dev("Rendering plain text...")
@@ -306,7 +313,7 @@ func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) 
 				break
 			}
 
-			return fmt.Errorf("TemplateName was set, but there is no TextTemplate to check")
+			return ErrFailedToMatchTextTemplate
 		}
 		log.Dev("Not using a template because either TextTemplate or TemplateName is not set...")
 

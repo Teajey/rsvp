@@ -12,6 +12,11 @@ const (
 	SupportedMediaTypeGob       string = "application/vnd.golang.gob"
 )
 
+VARIABLES
+
+var ErrFailedToMatchHtmlTemplate = errors.New("TemplateName was set, but it failed to match within HtmlTemplate")
+var ErrFailedToMatchTextTemplate = errors.New("TemplateName was set, but it failed to match within TextTemplate")
+
 FUNCTIONS
 
 func Adapt(cfg Config, handler WriterHandler) http.HandlerFunc
