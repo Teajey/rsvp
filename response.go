@@ -12,6 +12,7 @@
 package rsvp
 
 import (
+	"bytes"
 	"encoding/csv"
 	"encoding/gob"
 	"encoding/json"
@@ -19,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	html "html/template"
+	"io"
 	"iter"
 	"net/http"
 	"path/filepath"
@@ -166,7 +168,7 @@ type Config struct {
 	XmlIndent string
 }
 
-type mediaTypeExtensionHandler = func(mediaType string, w http.ResponseWriter, res *Response) (bool, error)
+type mediaTypeExtensionHandler = func(mediaType string, w io.Writer, res *Response) (bool, error)
 
 var mediaTypeExtensionHandlers []mediaTypeExtensionHandler = nil
 
@@ -202,13 +204,27 @@ func (res *Response) determineContentType(mediaType string, h http.Header) {
 
 // Write the [Response] to the [http.ResponseWriter] with the given [Config].
 func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) error {
-	log.Dev("config: %#v", cfg)
+	var buf bytes.Buffer
+	status, err := res.write2(&buf, w.Header(), r, cfg)
+	if err != nil {
+		return fmt.Errorf("Write2 failed: %w", err)
+	}
+	w.WriteHeader(status)
+	_, err = io.Copy(w, &buf)
+	if err != nil {
+		return fmt.Errorf("copying pipe to ResponseWriter failed: %w", err)
+	}
 
-	h := w.Header()
+	return nil
+}
+
+func (res *Response) write2(w io.Writer, wh http.Header, r *http.Request, cfg Config) (status int, err error) {
+	log.Dev("config: %#v", cfg)
+	status = 200
 
 	accept := r.Header.Get("Accept")
 
-	contentType := h.Get("Content-Type")
+	contentType := wh.Get("Content-Type")
 	if contentType != "" {
 		aMediaType := string(contentTypeExtractMediaType(contentType))
 		_, ok := mediaTypeToContentType[aMediaType]
@@ -225,28 +241,32 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) e
 	if 300 <= res.statusCode && res.statusCode < 400 {
 		log.Dev("Redirect")
 
-		h.Set("Location", res.redirectLocation)
+		wh.Set("Location", res.redirectLocation)
 
 		if res.isBlank() || accept == "" {
 			log.Dev("Redirect returning empty")
-			w.WriteHeader(res.statusCode)
-			return nil
+			status = res.statusCode
+			return
 		}
 
 		supported := res.determineSupported(cfg)
 		mediaType := res.determineMediaType(ext, accept, supported)
 
-		res.determineContentType(mediaType, h)
+		res.determineContentType(mediaType, wh)
 
-		w.WriteHeader(res.statusCode)
+		status = res.statusCode
 
-		return render(res, mediaType, w, cfg)
+		err = render(res, mediaType, w, cfg)
+		if err != nil {
+			status = http.StatusInternalServerError
+		}
+		return
 	}
 
 	if mediaType == "" {
 		if ext != "" {
-			w.WriteHeader(http.StatusNotFound)
-			return nil
+			status = http.StatusNotFound
+			return
 		}
 
 		res.statusCode = http.StatusNotAcceptable
@@ -256,30 +276,34 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) e
 	}
 
 	if mediaType == "text/plain" && cfg.TextTemplate == nil && res.TemplateName != "" {
-		w.WriteHeader(http.StatusNotFound)
-		return nil
+		status = http.StatusNotFound
+		return
 	}
 
 	if !res.isBlank() && contentType == "" {
-		res.determineContentType(mediaType, h)
+		res.determineContentType(mediaType, wh)
 	}
 
 	if res.statusCode != 0 {
-		w.WriteHeader(res.statusCode)
+		status = res.statusCode
 	}
 
 	if res.isBlank() {
 		log.Dev("Early returning because body is empty")
-		return nil
+		return
 	}
 
-	return render(res, mediaType, w, cfg)
+	err = render(res, mediaType, w, cfg)
+	if err != nil {
+		status = http.StatusInternalServerError
+	}
+	return
 }
 
 var ErrFailedToMatchTextTemplate = errors.New("TemplateName was set, but it failed to match within TextTemplate")
 var ErrFailedToMatchHtmlTemplate = errors.New("TemplateName was set, but it failed to match within HtmlTemplate")
 
-func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) error {
+func render(res *Response, mediaType string, w io.Writer, cfg Config) (err error) {
 	switch mediaType {
 	case SupportedMediaTypeHtml:
 		log.Dev("Rendering html...")
@@ -288,19 +312,22 @@ func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) 
 
 			if tm := cfg.HtmlTemplate.Lookup(res.TemplateName); tm != nil {
 				log.Dev("Executing HtmlTemplate...")
-				err := tm.ExecuteTemplate(w, res.TemplateName, res.Data)
+				err = tm.ExecuteTemplate(w, res.TemplateName, res.Data)
 				if err != nil {
-					return fmt.Errorf("failed to render data in html template %s: %w", res.TemplateName, err)
+					err = fmt.Errorf("failed to render data in html template %s: %w", res.TemplateName, err)
+					return
 				}
 				break
 			}
 
-			return ErrFailedToMatchHtmlTemplate
+			err = ErrFailedToMatchHtmlTemplate
+			return
 		}
 
-		_, err := w.Write([]byte(res.Data.(Html)))
+		_, err = w.Write([]byte(res.Data.(Html)))
 		if err != nil {
-			return fmt.Errorf("failed to write string as HTML: %w", err)
+			err = fmt.Errorf("failed to write string as HTML: %w", err)
+			return
 		}
 	case SupportedMediaTypePlaintext:
 		log.Dev("Rendering plain text...")
@@ -310,14 +337,16 @@ func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) 
 
 			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
 				log.Dev("Executing TextTemplate...")
-				err := tm.ExecuteTemplate(w, res.TemplateName, res.Data)
+				err = tm.ExecuteTemplate(w, res.TemplateName, res.Data)
 				if err != nil {
-					return fmt.Errorf("failed to render data in text template %s: %w", res.TemplateName, err)
+					err = fmt.Errorf("failed to render data in text template %s: %w", res.TemplateName, err)
+					return
 				}
 				break
 			}
 
-			return ErrFailedToMatchTextTemplate
+			err = ErrFailedToMatchTextTemplate
+			return
 		}
 		log.Dev("Not using a template because either TextTemplate or TemplateName is not set...")
 
@@ -325,19 +354,19 @@ func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) 
 			log.Dev("Can write data directly because it is a string...")
 			_, err := w.Write([]byte(data))
 			if err != nil {
-				return fmt.Errorf("failed to render data as string: %w", err)
+				err = fmt.Errorf("failed to render data as string: %w", err)
 			}
 			break
 		}
 
-		return fmt.Errorf("trying to render data as %s but this type is not supported: %#v", SupportedMediaTypePlaintext, res.Data)
+		err = fmt.Errorf("trying to render data as %s but this type is not supported: %#v", SupportedMediaTypePlaintext, res.Data)
 	case SupportedMediaTypeJson:
 		log.Dev("Rendering json...")
 		enc := json.NewEncoder(w)
 		enc.SetIndent(cfg.JsonPrefix, cfg.JsonIndent)
 		err := enc.Encode(res.Data)
 		if err != nil {
-			return fmt.Errorf("failed to render data as JSON: %w", err)
+			err = fmt.Errorf("failed to render data as JSON: %w", err)
 		}
 	case SupportedMediaTypeXml:
 		log.Dev("Rendering xml...")
@@ -345,45 +374,46 @@ func render(res *Response, mediaType string, w http.ResponseWriter, cfg Config) 
 		enc.Indent(cfg.XmlPrefix, cfg.XmlIndent)
 		err := enc.Encode(res.Data)
 		if err != nil {
-			return fmt.Errorf("failed to render data as XML: %w", err)
+			err = fmt.Errorf("failed to render data as XML: %w", err)
 		}
 	case SupportedMediaTypeCsv:
 		data, ok := res.Data.(Csv)
 		if !ok {
-			return fmt.Errorf("trying to write %#v, but it does not implement rsvp.Csv", res.Data)
+			err = fmt.Errorf("trying to write %#v, but it does not implement rsvp.Csv", res.Data)
 		}
 		log.Dev("Rendering csv...")
 		wr := csv.NewWriter(w)
 		err := data.MarshalCsv(wr)
 		if err != nil {
-			return fmt.Errorf("failed to render data as CSV: %w", err)
+			err = fmt.Errorf("failed to render data as CSV: %w", err)
 		}
 	case SupportedMediaTypeBytes:
 		log.Dev("Rendering bytes...")
 		_, err := w.Write(res.Data.([]byte))
 		if err != nil {
-			return fmt.Errorf("failed to render data as bytes: %w", err)
+			err = fmt.Errorf("failed to render data as bytes: %w", err)
 		}
 	case SupportedMediaTypeGob:
 		log.Dev("Rendering gob...")
 		err := gob.NewEncoder(w).Encode(res.Data)
 		if err != nil {
-			return fmt.Errorf("failed to render data as encoding/gob: %w", err)
+			err = fmt.Errorf("failed to render data as encoding/gob: %w", err)
 		}
 	default:
 		for _, handler := range mediaTypeExtensionHandlers {
-			matched, err := handler(mediaType, w, res)
+			var matched bool
+			matched, err = handler(mediaType, w, res)
 			if err != nil {
-				return fmt.Errorf("an extension handler failed: %w", err)
+				err = fmt.Errorf("an extension handler failed: %w", err)
 			}
 			if matched {
-				return nil
+				return
 			}
 		}
-		return fmt.Errorf("unhandled mediaType: %#v", mediaType)
+		err = fmt.Errorf("unhandled mediaType: %#v", mediaType)
 	}
 
-	return nil
+	return
 }
 
 // Blank will render as a blank response with no Content-Type.

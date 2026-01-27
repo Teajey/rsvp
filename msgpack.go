@@ -4,7 +4,7 @@ package rsvp
 
 import (
 	"fmt"
-	"net/http"
+	"io"
 
 	"github.com/Teajey/rsvp/internal/log"
 	msgpack "github.com/vmihailenco/msgpack/v5"
@@ -22,7 +22,7 @@ func init() {
 	extendedMediaTypes = append(extendedMediaTypes, SupportedMediaTypeMsgpack)
 }
 
-func msgpackHandler(mediaType string, w http.ResponseWriter, res *Response) (bool, error) {
+func msgpackHandler(mediaType string, w io.Writer, res *Response) (bool, error) {
 	if mediaType != SupportedMediaTypeMsgpack {
 		return false, nil
 	}
