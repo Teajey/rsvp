@@ -348,6 +348,24 @@ func TestBlankOk(t *testing.T) {
 	assert.Eq(t, "body contents", "", s)
 }
 
+func TestBlank500(t *testing.T) {
+	res := rsvp.Blank().StatusInternalServerError()
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.Config{}
+
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusInternalServerError, statusCode)
+	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
+}
+
 func TestEmptyStringBody(t *testing.T) {
 	res := rsvp.Response{Data: ""}
 	req := httptest.NewRequest("GET", "/", nil)
