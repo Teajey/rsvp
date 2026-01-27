@@ -382,6 +382,24 @@ func TestBlank500(t *testing.T) {
 	assert.Eq(t, "body contents", "", s)
 }
 
+func TestEmptyBytesBody(t *testing.T) {
+	res := rsvp.Response{Data: []byte("")}
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.Config{}
+
+	err := write(res, rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "application/octet-stream", resp.Header.Get("Content-Type"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "", s)
+}
+
 func TestEmptyStringBody(t *testing.T) {
 	res := rsvp.Response{Data: ""}
 	req := httptest.NewRequest("GET", "/", nil)
@@ -395,7 +413,6 @@ func TestEmptyStringBody(t *testing.T) {
 	resp := rec.Result()
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", 200, statusCode)
-	// TODO: Is it right that Content-Type is set here? In this scenario, by default, I feel it's reasonable not to set it
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
