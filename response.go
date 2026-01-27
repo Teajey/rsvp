@@ -67,12 +67,16 @@ type ResponseWriter interface {
 }
 
 type response struct {
-	http.ResponseWriter
+	std                 http.ResponseWriter
 	defaultTemplateName string
 }
 
 func (r *response) DefaultTemplateName(name string) {
 	r.defaultTemplateName = name
+}
+
+func (r *response) Header() http.Header {
+	return r.std.Header()
 }
 
 func (res *Response) isBlank() bool {

@@ -45,7 +45,7 @@ func AdaptFunc(cfg Config, handler func(w http.ResponseWriter, r *http.Request) 
 func toWriterHandler(h Handler) WriterHandler {
 	return WriterHandlerFunc(func(wr http.ResponseWriter, r *http.Request) Response {
 		w := response{
-			ResponseWriter: wr,
+			std: wr,
 		}
 		res := h.ServeHTTP(&w, r)
 		if res.TemplateName == "" && w.defaultTemplateName != "" {
