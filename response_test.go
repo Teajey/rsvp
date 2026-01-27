@@ -212,6 +212,34 @@ func TestTextTemplateWithoutName(t *testing.T) {
 	assert.Eq(t, "body contents", "Hello, World!", s)
 }
 
+func TestHtmlTemplateMiss(t *testing.T) {
+	body := "Hello <input> World!"
+	res := rsvp.Response{Data: body, TemplateName: "tn"}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "text/html")
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.Config{}
+	cfg.HtmlTemplate = html.Must(html.New("tm").Parse(`<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>`))
+
+	err := res.Write(rec, req, cfg)
+	assert.FatalErrIs(t, "Write response", err, rsvp.ErrFailedToMatchHtmlTemplate)
+}
+
+func TestTextTemplateMiss(t *testing.T) {
+	body := "Hello, World!"
+	res := rsvp.Response{Data: body, TemplateName: "tn"}
+	req := httptest.NewRequest("GET", "/message.txt", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.Config{}
+	cfg.TextTemplate = text.New("")
+	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
+
+	err := res.Write(rec, req, cfg)
+	assert.FatalErrIs(t, "Write response", err, rsvp.ErrFailedToMatchTextTemplate)
+}
+
 func TestAttemptToRenderNonTextAsText(t *testing.T) {
 	body := map[string]string{"I'm": "a map"}
 	res := rsvp.Response{Data: body}
@@ -352,6 +380,24 @@ func TestNilBody(t *testing.T) {
 	resp := rec.Result()
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", `null`+"\n", s)
+}
+
+func TestNilBodyAcceptText(t *testing.T) {
+	res := rsvp.Response{Data: nil}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "text/plain")
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.Config{}
+	err := res.Write(rec, req, cfg)
+	assert.FatalErr(t, "Write response", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", `null`+"\n", s)

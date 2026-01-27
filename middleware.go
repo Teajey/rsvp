@@ -3,6 +3,8 @@ package rsvp
 import (
 	stdlog "log"
 	"net/http"
+
+	"github.com/Teajey/rsvp/internal/log"
 )
 
 // WriterHandler is a [Handler] with access to [http.ResponseWriter].
@@ -41,8 +43,16 @@ func AdaptFunc(cfg Config, handler func(w http.ResponseWriter, r *http.Request) 
 
 // toWriterHandler adapts a [Handler] to [WriterHandler]
 func toWriterHandler(h Handler) WriterHandler {
-	return WriterHandlerFunc(func(w http.ResponseWriter, r *http.Request) Response {
-		return h.ServeHTTP(w.Header(), r)
+	return WriterHandlerFunc(func(wr http.ResponseWriter, r *http.Request) Response {
+		w := response{
+			ResponseWriter: wr,
+		}
+		res := h.ServeHTTP(&w, r)
+		if res.TemplateName == "" && w.defaultTemplateName != "" {
+			log.Dev("Using default template name: %v", w.defaultTemplateName)
+			res.TemplateName = w.defaultTemplateName
+		}
+		return res
 	})
 }
 
@@ -54,6 +64,6 @@ func AdaptHandler(cfg Config, h Handler) http.HandlerFunc {
 
 // AdaptHandlerFunc wraps a [HandlerFunc] and returns a standard [http.HandlerFunc].
 // Convenience for integrating with net/http.
-func AdaptHandlerFunc(cfg Config, h func(h http.Header, r *http.Request) Response) http.HandlerFunc {
+func AdaptHandlerFunc(cfg Config, h func(w ResponseWriter, r *http.Request) Response) http.HandlerFunc {
 	return Adapt(cfg, toWriterHandler(HandlerFunc(h)))
 }
