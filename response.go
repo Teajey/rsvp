@@ -269,8 +269,8 @@ func (p *responseWriter) write(res *Response, r *http.Request, cfg Config) (stat
 			return
 		}
 
-		res.statusCode = http.StatusNotAcceptable
-		log.Dev("NotAcceptable. Ignoring Accept header...")
+		log.Dev("NotAcceptable. Ignoring Accept header and setting status code to 406...")
+		status = http.StatusNotAcceptable
 		mediaType = chooseMediaType(ext, supported, content.ParseAccept(""))
 		log.Dev("new mediaType %#v", mediaType)
 	}
