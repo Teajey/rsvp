@@ -389,6 +389,11 @@ func Blank() Response {
 	return Response{blankBodyOverride: true}
 }
 
+// Data is a convenience function equivalent to instantiating Response{Data: data}
+func Data(data any) Response {
+	return Response{Data: data}
+}
+
 // Html can be used to set [Response.Data].
 //
 // The wrapped string will be treated as text/html

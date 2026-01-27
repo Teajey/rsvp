@@ -61,6 +61,8 @@ type Response struct {
 
 func Blank() Response
 
+func Data(data any) Response
+
 func (r Response) StatusAccepted() Response
 
 func (r Response) StatusBadRequest() Response
