@@ -15,14 +15,31 @@ import (
 	"github.com/Teajey/rsvp/internal/fixtures"
 )
 
+func makeResponse(response rsvp.Response, cfg rsvp.Config) http.HandlerFunc {
+	return rsvp.AdaptHandlerFunc(cfg, func(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
+		return response
+	})
+}
+
+func write(response rsvp.Response, rw http.ResponseWriter, r *http.Request, cfg rsvp.Config) error {
+	handler := func(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
+		return response
+	}
+	return rsvp.WriteResponse(cfg, rw, r, handler)
+}
+
 func TestStringBody(t *testing.T) {
+	cfg := rsvp.Config{}
 	body := `Hello,
 World!`
-	res := rsvp.Response{Data: body}
+	handler := rsvp.AdaptHandlerFunc(cfg, func(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
+		return rsvp.Data(body)
+	})
+
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
-	err := res.Write(rec, req, rsvp.Config{})
-	assert.FatalErr(t, "Write response", err)
+
+	handler(rec, req)
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
@@ -40,8 +57,7 @@ World!`
 	req.Header.Set("Accept", "application/*")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
-	assert.FatalErr(t, "Write response", err)
+	makeResponse(res, rsvp.Config{})(rec, req)
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
@@ -64,7 +80,7 @@ World!`
 	rec := httptest.NewRecorder()
 
 	// Note Config.ExtensionToProposalMap must be set for this to work
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -87,7 +103,7 @@ World!`
 	req.Header.Set("Accept", "application/*")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -106,7 +122,7 @@ func TestListBody(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -124,7 +140,7 @@ func TestBytesBody(t *testing.T) {
 	req.Header.Set("Accept", "application/*")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -150,7 +166,7 @@ func TestHtmlTemplate(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -176,7 +192,7 @@ func TestTextTemplateWithName(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -199,7 +215,7 @@ func TestTextTemplateWithoutName(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -222,7 +238,7 @@ func TestHtmlTemplateMiss(t *testing.T) {
 	cfg := rsvp.Config{}
 	cfg.HtmlTemplate = html.Must(html.New("tm").Parse(`<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErrIs(t, "Write response", err, rsvp.ErrFailedToMatchHtmlTemplate)
 }
 
@@ -236,7 +252,7 @@ func TestTextTemplateMiss(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErrIs(t, "Write response", err, rsvp.ErrFailedToMatchTextTemplate)
 }
 
@@ -247,7 +263,7 @@ func TestAttemptToRenderNonTextAsText(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.Config{}
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -297,7 +313,7 @@ func TestRss(t *testing.T) {
 		XmlIndent: "   ",
 	}
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -319,7 +335,7 @@ func TestNotFound(t *testing.T) {
 	cfg := rsvp.Config{}
 	cfg.HtmlTemplate = html.Must(html.New("").Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -337,7 +353,7 @@ func TestBlankOk(t *testing.T) {
 
 	cfg := rsvp.Config{}
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -355,7 +371,7 @@ func TestBlank500(t *testing.T) {
 
 	cfg := rsvp.Config{}
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -373,7 +389,7 @@ func TestEmptyStringBody(t *testing.T) {
 
 	cfg := rsvp.Config{}
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -392,7 +408,7 @@ func TestNilBody(t *testing.T) {
 
 	cfg := rsvp.Config{}
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -410,7 +426,7 @@ func TestNilBodyAcceptText(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.Config{}
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -427,7 +443,7 @@ func TestSeeOtherCanRender(t *testing.T) {
 	req.Header.Set("Accept", "text/plain")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -444,7 +460,7 @@ func TestSeeOtherDoesNotRenderWithoutAccept(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -462,7 +478,7 @@ func TestFoundCanRender(t *testing.T) {
 	req.Header.Set("Accept", "text/plain")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -479,7 +495,7 @@ func TestFoundDoesNotRenderHtmlWithoutAccept(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -497,7 +513,7 @@ func TestPermanentRedirectDoesNotRenderWithoutAccept(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -515,7 +531,7 @@ func TestMovedPermanentlyDoesRender(t *testing.T) {
 	req.Header.Set("Accept", "text/plain")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -533,7 +549,7 @@ func TestNotAcceptableDoesRenderDefault(t *testing.T) {
 	req.Header.Set("Accept", "application/vnd.foobar")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -552,7 +568,7 @@ func TestNotFoundJson(t *testing.T) {
 	cfg := rsvp.Config{}
 	cfg.HtmlTemplate = html.Must(html.New("").Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -568,7 +584,7 @@ func TestHtmlFromString(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -588,7 +604,7 @@ func TestExplicitTextRequestWithoutTextTemplate(t *testing.T) {
 	cfg := rsvp.Config{}
 	cfg.HtmlTemplate = html.Must(html.New("").Parse(`{{define "tm"}}<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -610,7 +626,7 @@ func TestExplicitHtmlRequestWithoutHtmlTemplate(t *testing.T) {
 	cfg := rsvp.Config{}
 	cfg.TextTemplate = text.Must(text.New("").Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -630,7 +646,7 @@ World!`
 	req := httptest.NewRequest("GET", "/files/file.txt", nil)
 	rec := httptest.NewRecorder()
 	cfg := rsvp.Config{}
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -647,7 +663,7 @@ func TestPutWithOkResponse(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	cfg := rsvp.Config{}
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -671,7 +687,7 @@ func TestRequestUnknownFormat(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -696,7 +712,7 @@ func TestComplexDataStructuresAreJsonByDefault(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -722,7 +738,7 @@ func TestFirefoxAcceptHeader(t *testing.T) {
 	cfg.TextTemplate = text.New("")
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
-	err := res.Write(rec, req, cfg)
+	err := write(res, rec, req, cfg)
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -740,7 +756,7 @@ func TestSeeOtherBlank(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -757,7 +773,7 @@ func TestFoundBlank(t *testing.T) {
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -775,7 +791,7 @@ func TestRequestJsonEmptyString(t *testing.T) {
 	req.Header.Set("Accept", "application/json")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -792,7 +808,7 @@ func TestRequestJsonNull(t *testing.T) {
 	req.Header.Set("Accept", "application/json")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -809,7 +825,7 @@ func TestRespondJsonEmptyString(t *testing.T) {
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/json")
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -826,7 +842,7 @@ func TestRespondJsonNull(t *testing.T) {
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/json")
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -843,7 +859,7 @@ func TestRequestXmlEmptyString(t *testing.T) {
 	req.Header.Set("Accept", "application/xml")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -860,7 +876,7 @@ func TestRequestXmlNull(t *testing.T) {
 	req.Header.Set("Accept", "application/xml")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -877,7 +893,7 @@ func TestRespondXmlEmptyString(t *testing.T) {
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/xml")
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -894,7 +910,7 @@ func TestRespondXmlNull(t *testing.T) {
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/xml")
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -912,7 +928,7 @@ func TestRequestForXmlButServingJson(t *testing.T) {
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/json")
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -929,7 +945,7 @@ func TestRequestGobInteger(t *testing.T) {
 	req.Header.Set("Accept", "application/vnd.golang.gob")
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -944,7 +960,7 @@ func TestRequestGobEmptyMapUsingFileExtension(t *testing.T) {
 	req := httptest.NewRequest("GET", "/resource.gob", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()
@@ -974,7 +990,7 @@ func TestRequestCsv(t *testing.T) {
 	req := httptest.NewRequest("GET", "/resource.csv", nil)
 	rec := httptest.NewRecorder()
 
-	err := res.Write(rec, req, rsvp.Config{})
+	err := write(res, rec, req, rsvp.Config{})
 	assert.FatalErr(t, "Write response", err)
 
 	resp := rec.Result()

@@ -23,6 +23,10 @@ func AdaptHandler(cfg Config, next Handler) http.Handler
 
 func AdaptHandlerFunc(cfg Config, next HandlerFunc) http.HandlerFunc
 
+func Write(cfg Config, w io.Writer, wh http.Header, r *http.Request, handler HandlerFunc) (int, error)
+
+func WriteResponse(cfg Config, rw http.ResponseWriter, r *http.Request, handler HandlerFunc) error
+
 TYPES
 
 type Config struct {
@@ -102,8 +106,6 @@ func (r Response) StatusTooManyRequests() Response
 func (r Response) StatusUnauthorized() Response
 
 func (r Response) StatusUnprocessableEntity() Response
-
-func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) error
 
 type ResponseWriter interface {
 	// Header is equivalent to [http.ResponseWriter.Header]
