@@ -80,7 +80,7 @@ func (r *response) Header() http.Header {
 }
 
 func (res *Response) isBlank() bool {
-	return res.blankBodyOverride
+	return res.Data == nil && res.blankBodyOverride
 }
 
 var extendedMediaTypes []string = nil
@@ -260,17 +260,17 @@ func (res *Response) Write(w http.ResponseWriter, r *http.Request, cfg Config) e
 		return nil
 	}
 
-	if res.isBlank() {
-		log.Dev("Early returning because body is empty")
-		return nil
-	}
-
-	if contentType == "" {
+	if !res.isBlank() && contentType == "" {
 		res.determineContentType(mediaType, h)
 	}
 
 	if res.statusCode != 0 {
 		w.WriteHeader(res.statusCode)
+	}
+
+	if res.isBlank() {
+		log.Dev("Early returning because body is empty")
+		return nil
 	}
 
 	return render(res, mediaType, w, cfg)
