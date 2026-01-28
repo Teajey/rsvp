@@ -30,7 +30,7 @@ ServeHTTP(rsvp.ResponseWriter, *http.Request) rsvp.Body
    - `/users/123.json` → Forces `application/json`
    - `/users/123.xml` → Forces `application/xml`
    - `/users/123.csv` → Forces `text/csv`
-   - NOTE: Currently, this behaviour is hidden behind net/http's strict path matching. The above examples would require something like `mux.Handle("/users/{filename}")` with middleware that strips out the file extension, and matches the remaining file stem with its handler. rsvp does not currently provide a utility for this.
+   - NOTE: Currently, this behaviour is hidden behind net/http's strict path matching. The above examples would require something like `mux.Handle("/users/{filename}")` with middleware that strips out the file extension, and matches the remaining file stem with its respective handler. rsvp does not currently provide a utility for this.
 
 It's easy for me to lose track of what I've written to [`http.ResponseWriter`](https://pkg.go.dev/net/http#ResponseWriter). Occasionally receiving the old `http: multiple response.WriteHeader calls`
 
