@@ -1,6 +1,6 @@
 # rsvp
 
-My "functional" wrapper around Golang's [`net/http` server stuff](https://pkg.go.dev/net/http#hdr-Servers)
+My value-oriented wrapper around Golang's [`net/http` server stuff](https://pkg.go.dev/net/http#hdr-Servers).
 
 The default `net/http` handler interface:
 
@@ -54,9 +54,8 @@ if r.Method != http.MethodPut {
 
 (Wrapping this with your own convenience method, i.e. `func ErrorMethodNotAllowed(message string) rsvp.Response` is encouraged. You can decide for yourself how errors are represented)
 
-# Examples
-
 ## Quickstart
+
 ```go
 func main() {
     mux := rsvp.NewServeMux()
@@ -69,7 +68,12 @@ func getUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
 }
 ```
 
-## Templates
+> [!IMPORTANT]: nil Data renders as JSON "null\n", not an empty response.
+> Use Data: "" for a blank response body.
+
+## Examples
+
+### Templates
 
 ```go
 mux.Config.HtmlTemplate = template.Must(template.ParseGlob("templates/html/*.gotmpl"))
@@ -81,7 +85,9 @@ func showUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
 }
 ```
 
-## Error responses
+### Error responses
+
+Build your own!
 
 ```go
 type APIError struct {
@@ -94,7 +100,7 @@ func ErrorNotFound(msg string) rsvp.Response {
 }
 ```
 
-## CSV
+### CSV
 
 ```go
 type UserList []User
@@ -109,11 +115,15 @@ func (ul UserList) MarshalCsv(w *csv.Writer) error {
     return nil
 }
 
-func userList(msg string) rsvp.Response {
+func userList(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
     return rsvp.Data(users) // In content negotiation this will be offered as JSON, XML, CSV, and encoding/gob.
 }
 ```
 
-## Live
+### net/http middleware compatibility
+
+See [middleware_test.go](./middleware_test.go) for an example of how to use this library with standard middleware.
+
+### Live
 
 You can see it in action on my stupid little blog site, brightscroll.net. For instance, https://brightscroll.net/posts/2025-06-30.md vs. https://brightscroll.net/posts/2025-06-30.md.txt

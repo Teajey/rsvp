@@ -15,9 +15,9 @@ import (
 	"github.com/Teajey/rsvp/internal/dev"
 )
 
-// ResponseWriter bears its name mostly for the sake of keeping rsvp.Handler similar to http.Handler.
+// ResponseWriter handles metadata and configuration of the response. It bears its "Writer" name mostly for the sake of keeping rsvp.Handler similar to http.Handler.
 //
-// Its underlying type has a Write function, but it is not available here because it is controlled indirectly by the [Response] value that the handler provides.
+// Its underlying type has a `write` function, but it is not available here because it is controlled indirectly by the [Response] value that [Handler] provides.
 //
 // If you need access to http.ResponseWriter, especially for middleware, you should follow the example of [AdaptHandlerFunc]'s source code for how to operate rsvp at a lower level from within an [http.Handler].
 type ResponseWriter interface {
