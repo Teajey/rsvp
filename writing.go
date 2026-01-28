@@ -164,12 +164,7 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 
 			return ErrFailedToMatchHtmlTemplate
 		}
-		dev.Log("Not using a template because either HtmlTemplate or TemplateName is not set...")
-
-		_, err := w.Write([]byte(res.Data.(Html)))
-		if err != nil {
-			return fmt.Errorf("writing string as HTML: %w", err)
-		}
+		return fmt.Errorf("not using a template because either HtmlTemplate or TemplateName is not set")
 	case SupportedMediaTypePlaintext:
 		dev.Log("Rendering plain text...")
 

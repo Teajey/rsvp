@@ -596,22 +596,6 @@ func TestNotFoundJson(t *testing.T) {
 	assert.Eq(t, "body contents", `"404 Not Found"`+"\n", s)
 }
 
-func TestHtmlFromString(t *testing.T) {
-	res := rsvp.Response{Data: rsvp.Html("<div></div>")}
-	req := httptest.NewRequest("GET", "/", nil)
-	rec := httptest.NewRecorder()
-
-	err := write(res, rec, req, rsvp.Config{})
-	assert.FatalErr(t, "Write response", err)
-
-	resp := rec.Result()
-	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
-	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
-	s := rec.Body.String()
-	assert.Eq(t, "body contents", res.Data.(rsvp.Html), rsvp.Html(s))
-}
-
 func TestExplicitTextRequestWithoutTextTemplate(t *testing.T) {
 	body := "Hello <input> World!"
 	res := rsvp.Response{Data: body, TemplateName: "tm"}

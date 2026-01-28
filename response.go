@@ -60,9 +60,3 @@ func Blank() Response {
 func Data(data any) Response {
 	return Response{Data: data}
 }
-
-// Html can be used to set [Response.Data].
-//
-// The wrapped string will be treated as text/html
-// instead of text/plain.
-type Html string
