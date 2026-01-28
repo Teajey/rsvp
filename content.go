@@ -188,14 +188,14 @@ func (res *Body) MediaTypes(cfg Config) iter.Seq[string] {
 			}
 		}
 
-		if !yield(SupportedMediaTypeGob) {
-			return
-		}
-
 		for _, mediaType := range extendedMediaTypes {
 			if !yield(mediaType) {
 				return
 			}
+		}
+
+		if !yield(SupportedMediaTypeGob) {
+			return
 		}
 	}
 }
