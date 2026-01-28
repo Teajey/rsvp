@@ -1,4 +1,4 @@
-# RSVP
+# rsvp
 
 My "functional" wrapper around Golang's [`net/http` server stuff](https://pkg.go.dev/net/http#hdr-Servers)
 
@@ -8,14 +8,14 @@ The default `net/http` handler interface:
 ServeHTTP(http.ResponseWriter, *http.Request)
 ```
 
-RSVP's handler interface:
+rsvp's handler interface:
 
 ```go
 ServeHTTP(rsvp.ResponseWriter, *http.Request) rsvp.Response
 ```
 
 ## Features
- - Content Negotiation. RSVP will attempt to provide the data in a supported media-type that is requested via the Accept header, or even the URL's file extension in the case of GET requests:
+ - Content Negotiation. rsvp will attempt to provide the data in a supported media-type that is requested via the Accept header, or even the URL's file extension in the case of GET requests:
    - [x] `application/json`
    - [x] `text/html`
    - [x] `text/plain`
@@ -25,6 +25,7 @@ ServeHTTP(rsvp.ResponseWriter, *http.Request) rsvp.Response
    - [x] `application/vnd.golang.gob` (Golang's [encoding/gob](https://go.dev/blog/gob))
    - [x] `application/vnd.msgpack` (optional extension behind -tags=rsvp_msgpack)
    - [ ] Others?
+ - Extension matching. `/users/123 →` returns the default media type as determined by `rsvp.Response` value, `/users/123.json → application/json`, `/users/123.xml → application/xml`
 
 It's easy for me to lose track of what I've written to [`http.ResponseWriter`](https://pkg.go.dev/net/http#ResponseWriter). Occasionally receiving the old `http: multiple response.WriteHeader calls`
 
@@ -39,7 +40,7 @@ if r.Method != http.MethodPut {
 }
 ```
 
-Not with RSVP 🫠
+Not with rsvp 🫠
 
 ```go
 if r.Method != http.MethodPut {
@@ -50,4 +51,63 @@ if r.Method != http.MethodPut {
 (Wrapping this with your own convenience method, i.e. `func ErrorMethodNotAllowed(message string) rsvp.Response` is encouraged. You can decide for yourself how errors are represented)
 
 # Examples
- - You can see it in action on my stupid little blog site, brightscroll.net. For instance, https://brightscroll.net/posts/2025-06-30.md vs. https://brightscroll.net/posts/2025-06-30.md.txt
+
+## Quickstart
+```go
+func main() {
+    mux := rsvp.NewServeMux()
+    mux.HandleFunc("GET /users/{id}", getUser)
+    http.ListenAndServe(":8080", mux)
+}
+
+func getUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
+    return rsvp.Data(User{ID: 123}) // In content negotiation this will be offered as, in order; JSON, XML, and encoding/gob.
+}
+```
+
+## Templates
+
+```go
+mux.Config.HtmlTemplate = template.Must(template.ParseGlob("*.html"))
+mux.Config.TextTemplate = template.Must(template.ParseGlob("*.txt"))
+
+func showUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
+    w.DefaultTemplateName("user.gotmpl")
+    return rsvp.Data(User{ID: 123}) // In content negotiation this will be offered as JSON, XML, HTML, plain text, and encoding/gob.
+}
+```
+
+## Error responses
+
+```go
+type APIError struct {
+    Message string `json:"message"`
+    Code    string `json:"code"`
+}
+
+func ErrorNotFound(msg string) rsvp.Response {
+    return rsvp.Data(APIError{Message: msg, Code: "NOT_FOUND"}).StatusNotFound()
+}
+```
+
+## CSV
+
+```go
+var users []User
+
+func (ul []User) MarshalCsv(w *csv.Writer) error {
+    w.Write([]string{"ID", "Name", "Email"})
+    for _, u := range ul {
+        w.Write([]string{u.ID, u.Name, u.Email})
+    }
+    return nil
+}
+
+func userList(msg string) rsvp.Response {
+    return rsvp.Data(users) // In content negotiation this will be offered as JSON, XML, CSV, and encoding/gob.
+}
+```
+
+## Live
+
+You can see it in action on my stupid little blog site, brightscroll.net. For instance, https://brightscroll.net/posts/2025-06-30.md vs. https://brightscroll.net/posts/2025-06-30.md.txt

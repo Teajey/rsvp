@@ -6,11 +6,18 @@
 // This content negotiation extends to ALL responses, including redirects,
 // allowing you to provide rich feedback in many contexts.
 //
+// The Accept header should be expected to be used as standardized; weighting is supported.
+// If an acceptable fallback is not reached, a 406 Not Acceptable will be returned, and
+// the Content-Type and body will be set as if Accept: */* was sent.
+//
 // This makes rsvp particularly well-suited for APIs that serve multiple clients
 // (browsers, mobile apps, CLI tools) and for taking advantage of principles such
 // as REST and progressive enhancement.
 package rsvp
 
+// Response represents the content body of an HTTP response.
+//
+// By default, it represents a 200 OK response. The Response.Status* methods (e.g. [Response.StatusFound]) may be used to set a non-200 status.
 type Response struct {
 	// Data is the raw data of the response payload to be rendered.
 	//
@@ -23,9 +30,8 @@ type Response struct {
 	// [ResponseWriter.DefaultTemplateName] may also be used to set a default once on a handler.
 	//
 	// It is not an error if a template is not found for one of the two templates; other formats will be attempted.
-	//
-	// TODO: Perhaps a warning should be issued to stderr if this fails to match on both templates?
 	TemplateName string
+	// TODO: Perhaps a warning should be issued to stderr if this fails to match on both templates?
 
 	statusCode int
 
@@ -48,6 +54,9 @@ func Blank() Response {
 }
 
 // Data is a convenience function equivalent to instantiating Response{Data: data}
+//
+// IMPORTANT: nil Data renders as JSON "null\n", not an empty response.
+// Use Data("") for a blank text/plain response body, or [Blank] for a blank response with no Content-Type.
 func Data(data any) Response {
 	return Response{Data: data}
 }

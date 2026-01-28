@@ -6,7 +6,9 @@ import (
 
 // ServeMux is a wrapper of [http.ServeMux] that consumes [Handler].
 type ServeMux struct {
-	// Access to the underlying standard http.ServeMux from net/http
+	// Access to the underlying standard http.ServeMux from net/http.
+	//
+	// This is useful when you need at least one handler to be http.Handler; particularly when a [Handler] has been wrapped with [http.Handler] middleware.
 	Std    *http.ServeMux
 	Config Config
 }
