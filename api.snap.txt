@@ -52,8 +52,6 @@ type HandlerFunc func(w ResponseWriter, r *http.Request) Response
 
 func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *http.Request) Response
 
-type Html string
-
 type Response struct {
 	Data any
 	TemplateName string

@@ -149,9 +149,6 @@ func (res *Response) MediaTypes(cfg Config) iter.Seq[string] {
 		}
 
 		switch res.Data.(type) {
-		case Html:
-			yield(SupportedMediaTypeHtml)
-			return
 		case string:
 			if !yield(SupportedMediaTypePlaintext) {
 				return

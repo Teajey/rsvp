@@ -111,18 +111,6 @@ func TestStringResponse(t *testing.T) {
 	assert.SlicesEq(t, "media types", expected, actual)
 }
 
-func TestHtmlResponse(t *testing.T) {
-	cfg := rsvp.Config{}
-	resp := rsvp.Data(rsvp.Html("<p>Hello</p>"))
-	actual := slices.Collect(resp.MediaTypes(cfg))
-
-	expected := []string{
-		rsvp.SupportedMediaTypeHtml,
-	}
-
-	assert.SlicesEq(t, "media types", expected, actual)
-}
-
 func TestBytesResponse(t *testing.T) {
 	cfg := rsvp.Config{}
 	resp := rsvp.Data([]byte("Hello"))
@@ -171,20 +159,6 @@ func TestStructResponseWithHtmlTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeHtml,
 		rsvp.SupportedMediaTypeGob,
-	}
-
-	assert.SlicesEq(t, "media types", expected, actual)
-}
-
-func TestHtmlResponseWithHtmlTemplate(t *testing.T) {
-	cfg := rsvp.Config{
-		HtmlTemplate: html.New(""),
-	}
-	resp := rsvp.Response{Data: rsvp.Html("<p>Hello</p>"), TemplateName: "tm"}
-	actual := slices.Collect(resp.MediaTypes(cfg))
-
-	expected := []string{
-		rsvp.SupportedMediaTypeHtml,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
