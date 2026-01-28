@@ -310,7 +310,7 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 				dev.Log("Executing HtmlTemplate...")
 				err := tm.ExecuteTemplate(w, res.TemplateName, res.Data)
 				if err != nil {
-					return fmt.Errorf("failed to render data in html template %s: %w", res.TemplateName, err)
+					return fmt.Errorf("rendering data in html template %s: %w", res.TemplateName, err)
 				}
 				break
 			}
@@ -321,7 +321,7 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 
 		_, err := w.Write([]byte(res.Data.(Html)))
 		if err != nil {
-			return fmt.Errorf("failed to write string as HTML: %w", err)
+			return fmt.Errorf("writing string as HTML: %w", err)
 		}
 	case SupportedMediaTypePlaintext:
 		dev.Log("Rendering plain text...")
@@ -333,7 +333,7 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 				dev.Log("Executing TextTemplate...")
 				err := tm.ExecuteTemplate(w, res.TemplateName, res.Data)
 				if err != nil {
-					return fmt.Errorf("failed to render data in text template %s: %w", res.TemplateName, err)
+					return fmt.Errorf("rendering data in text template %s: %w", res.TemplateName, err)
 				}
 				break
 			}
@@ -346,19 +346,19 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 			dev.Log("Can write data directly because it is a string...")
 			_, err := w.Write([]byte(data))
 			if err != nil {
-				return fmt.Errorf("failed to render data as string: %w", err)
+				return fmt.Errorf("rendering data as plain string: %w", err)
 			}
 			break
 		}
 
-		return fmt.Errorf("trying to render data as %s but this type is not supported: %#v", SupportedMediaTypePlaintext, res.Data)
+		return fmt.Errorf("trying to render data as %v but this type is not supported: %#v", SupportedMediaTypePlaintext, res.Data)
 	case SupportedMediaTypeJson:
 		dev.Log("Rendering json...")
 		enc := json.NewEncoder(w)
 		enc.SetIndent(cfg.JsonPrefix, cfg.JsonIndent)
 		err := enc.Encode(res.Data)
 		if err != nil {
-			return fmt.Errorf("failed to render data as JSON: %w", err)
+			return fmt.Errorf("rendering data as JSON: %w", err)
 		}
 	case SupportedMediaTypeXml:
 		dev.Log("Rendering xml...")
@@ -366,7 +366,7 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 		enc.Indent(cfg.XmlPrefix, cfg.XmlIndent)
 		err := enc.Encode(res.Data)
 		if err != nil {
-			return fmt.Errorf("failed to render data as XML: %w", err)
+			return fmt.Errorf("rendering data as XML: %w", err)
 		}
 	case SupportedMediaTypeCsv:
 		data, ok := res.Data.(Csv)
@@ -377,19 +377,19 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 		wr := csv.NewWriter(w)
 		err := data.MarshalCsv(wr)
 		if err != nil {
-			return fmt.Errorf("failed to render data as CSV: %w", err)
+			return fmt.Errorf("rendering data as CSV: %w", err)
 		}
 	case SupportedMediaTypeBytes:
 		dev.Log("Rendering bytes...")
 		_, err := w.Write(res.Data.([]byte))
 		if err != nil {
-			return fmt.Errorf("failed to render data as bytes: %w", err)
+			return fmt.Errorf("rendering data as bytes: %w", err)
 		}
 	case SupportedMediaTypeGob:
 		dev.Log("Rendering gob...")
 		err := gob.NewEncoder(w).Encode(res.Data)
 		if err != nil {
-			return fmt.Errorf("failed to render data as encoding/gob: %w", err)
+			return fmt.Errorf("rendering data as encoding/gob: %w", err)
 		}
 	default:
 		for _, handler := range mediaTypeExtensionHandlers {

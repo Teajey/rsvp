@@ -81,7 +81,7 @@ func compressionClient(reqBody string, handler http.HandlerFunc) (status int, bo
 	res := rec.Result()
 	defer func() {
 		if err := res.Body.Close(); err != nil {
-			log.Printf("failed to copy to http.ResponseWriter: %s", err)
+			log.Printf("Failed to copy to http.ResponseWriter: %s", err)
 		}
 	}()
 
