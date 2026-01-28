@@ -1,3 +1,5 @@
+//go:build rsvp_msgpack
+
 package rsvp_test
 
 import (
@@ -19,6 +21,7 @@ func TestNilResponse(t *testing.T) {
 	expected := []string{
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -33,6 +36,7 @@ func TestBlankResponse(t *testing.T) {
 	expected := []string{
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -48,6 +52,7 @@ func TestEmptyStringResponse(t *testing.T) {
 		rsvp.SupportedMediaTypePlaintext,
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -62,6 +67,7 @@ func TestStructResponse(t *testing.T) {
 	expected := []string{
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -76,6 +82,7 @@ func TestSliceResponse(t *testing.T) {
 	expected := []string{
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -90,6 +97,7 @@ func TestMapResponse(t *testing.T) {
 	expected := []string{
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -105,6 +113,7 @@ func TestStringResponse(t *testing.T) {
 		rsvp.SupportedMediaTypePlaintext,
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -120,6 +129,7 @@ func TestBytesResponse(t *testing.T) {
 		rsvp.SupportedMediaTypeBytes,
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -141,6 +151,7 @@ func TestCsvResponse(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeCsv,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -158,6 +169,7 @@ func TestStructResponseWithHtmlTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeHtml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -174,6 +186,7 @@ func TestStructWithoutTemplateNameResponseWithHtmlTemplate(t *testing.T) {
 	expected := []string{
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -192,6 +205,7 @@ func TestCsvResponseWithHtmlTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeCsv,
 		rsvp.SupportedMediaTypeHtml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -210,6 +224,7 @@ func TestCsvResponseWithTextTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeCsv,
 		rsvp.SupportedMediaTypePlaintext,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -227,6 +242,7 @@ func TestStructResponseWithTextTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypePlaintext,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -243,6 +259,7 @@ func TestStructWithoutTemplateNameResponseWithTextTemplate(t *testing.T) {
 	expected := []string{
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -262,6 +279,7 @@ func TestStructResponseWithTextAndHtmlTemplates(t *testing.T) {
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeHtml,
 		rsvp.SupportedMediaTypePlaintext,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -282,6 +300,7 @@ func TestStringResponseWithTextAndHtmlTemplates(t *testing.T) {
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeHtml,
 		rsvp.SupportedMediaTypePlaintext,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -302,6 +321,7 @@ func TestCsvResponseWithTextAndHtmlTemplates(t *testing.T) {
 		rsvp.SupportedMediaTypeCsv,
 		rsvp.SupportedMediaTypeHtml,
 		rsvp.SupportedMediaTypePlaintext,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -320,6 +340,7 @@ func TestBytesResponseWithHtmlTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeHtml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
@@ -338,6 +359,7 @@ func TestStringResponseWithHtmlTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeHtml,
+		rsvp.SupportedMediaTypeMsgpack,
 		rsvp.SupportedMediaTypeGob,
 	}
 
