@@ -206,11 +206,11 @@ func (res *Response) determineMediaType(ext, accept string, supported []string) 
 	return mediaType
 }
 
-func (res *Response) determineContentType(mediaType string, h http.Header) {
+func (res *Response) determineContentType(mediaType string, wh http.Header) {
 	contentType := mediaTypeToContentType[mediaType]
 
 	dev.Log("Setting content-type to %#v", contentType)
-	h.Set("Content-Type", contentType)
+	wh.Set("Content-Type", contentType)
 }
 
 // Write the [Response] to the [http.ResponseWriter] with the given [Config].
