@@ -17,7 +17,7 @@ import (
 
 // ResponseWriter handles metadata and configuration of the response. It bears its "Writer" name mostly for the sake of keeping rsvp.Handler similar to http.Handler.
 //
-// Its underlying type has a `write` function, but it is not available here because it is controlled indirectly by the [Response] value that [Handler] provides.
+// Its underlying type has a `write` function, but it is not available here because it is controlled indirectly by the [Body] value that [Handler] provides.
 //
 // If you need access to http.ResponseWriter, especially for middleware, you should follow the example of [AdaptHandlerFunc]'s source code for how to operate rsvp at a lower level from within an [http.Handler].
 type ResponseWriter interface {
@@ -26,9 +26,9 @@ type ResponseWriter interface {
 
 	// DefaultTemplateName is used to associate a default template name with the current handler.
 	//
-	// It may be overridden by [Response.TemplateName].
+	// It may be overridden by [Body.TemplateName].
 	//
-	// The intended use case for this method is to call it at the top of an [HandlerFunc] so that the TemplateName does not need to be set exhaustively on every instance of [Response] that the handler might return.
+	// The intended use case for this method is to call it at the top of an [HandlerFunc] so that the TemplateName does not need to be set exhaustively on every instance of [Body] that the handler might return.
 	DefaultTemplateName(name string)
 }
 
@@ -60,8 +60,8 @@ func (w *responseWriter) Header() http.Header {
 	return w.header
 }
 
-// Write the [Response] to the [http.ResponseWriter] with the given [Config].
-func (w *responseWriter) write(res *Response, r *http.Request, cfg Config) (status int, err error) {
+// Write the [Body] to the [http.ResponseWriter] with the given [Config].
+func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (status int, err error) {
 	dev.Log("config: %#v", cfg)
 	status = cmp.Or(res.statusCode, 200)
 
@@ -146,7 +146,7 @@ func (w *responseWriter) write(res *Response, r *http.Request, cfg Config) (stat
 var ErrFailedToMatchTextTemplate = errors.New("TemplateName was set, but it failed to match within TextTemplate")
 var ErrFailedToMatchHtmlTemplate = errors.New("TemplateName was set, but it failed to match within HtmlTemplate")
 
-func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
+func render(res *Body, mediaType string, w io.Writer, cfg Config) error {
 	switch mediaType {
 	case SupportedMediaTypeHtml:
 		dev.Log("Rendering html...")

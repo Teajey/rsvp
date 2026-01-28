@@ -25,13 +25,13 @@ func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Handler defines the basic signature of RSVP's http handlers
 type Handler interface {
-	ServeHTTP(w ResponseWriter, r *http.Request) Response
+	ServeHTTP(w ResponseWriter, r *http.Request) Body
 }
 
 // HandlerFunc is a counterpart to [http.HandlerFunc]
-type HandlerFunc func(w ResponseWriter, r *http.Request) Response
+type HandlerFunc func(w ResponseWriter, r *http.Request) Body
 
-func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *http.Request) Response {
+func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *http.Request) Body {
 	return f(w, r)
 }
 
@@ -41,6 +41,6 @@ func (m *ServeMux) Handle(pattern string, handler Handler) {
 }
 
 // Uses the same pattern syntax as [http.ServeMux]
-func (m *ServeMux) HandleFunc(pattern string, handler func(ResponseWriter, *http.Request) Response) {
+func (m *ServeMux) HandleFunc(pattern string, handler func(ResponseWriter, *http.Request) Body) {
 	m.Handle(pattern, HandlerFunc(handler))
 }

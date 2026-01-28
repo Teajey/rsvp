@@ -14,7 +14,7 @@ import (
 	"github.com/Teajey/rsvp/internal/assert"
 )
 
-func echoHandler(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
+func echoHandler(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("echoHandler error: %s", err)
@@ -23,7 +23,7 @@ func echoHandler(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
 	return rsvp.Data(string(body))
 }
 
-func compressionMiddleware(cfg rsvp.Config, next func(w rsvp.ResponseWriter, r *http.Request) rsvp.Response) func(w http.ResponseWriter, r *http.Request) {
+func compressionMiddleware(cfg rsvp.Config, next func(w rsvp.ResponseWriter, r *http.Request) rsvp.Body) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var buf bytes.Buffer
 

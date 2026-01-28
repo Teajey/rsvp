@@ -5,15 +5,15 @@ import (
 	text "text/template"
 )
 
-// Settings for writing the rsvp.Response
+// Settings for writing the rsvp.Body
 type Config struct {
-	// [Response.Data] may be passed to this template as data if content negotiation resolves to text/html and [Response.TemplateName] matches via [html.Template.Lookup].
+	// [Body.Data] may be passed to this template as data if content negotiation resolves to text/html and [Body.TemplateName] matches via [html.Template.Lookup].
 	//
-	// If both HtmlTemplate and TextTemplate match [Response.TemplateName], HtmlTemplate takes precedence.
+	// If both HtmlTemplate and TextTemplate match [Body.TemplateName], HtmlTemplate takes precedence.
 	HtmlTemplate *html.Template
-	// [Response.Data] may be passed to this template as data if content negotiation resolves to text/plain and [Response.TemplateName] matches via [text.Template.Lookup].
+	// [Body.Data] may be passed to this template as data if content negotiation resolves to text/plain and [Body.TemplateName] matches via [text.Template.Lookup].
 	//
-	// If both HtmlTemplate and TextTemplate match [Response.TemplateName], HtmlTemplate takes precedence.
+	// If both HtmlTemplate and TextTemplate match [Body.TemplateName], HtmlTemplate takes precedence.
 	TextTemplate *text.Template
 
 	// JsonPrefix is used to set [json.Encoder.SetIndent]

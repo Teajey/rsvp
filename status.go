@@ -8,7 +8,7 @@ import "net/http"
 //
 // It indicates that a new resource has been successfully created at the given
 // location.
-func (r Response) StatusCreated(location string) Response {
+func (r Body) StatusCreated(location string) Body {
 	r.statusCode = http.StatusCreated
 	r.redirectLocation = location
 	return r
@@ -18,7 +18,7 @@ func (r Response) StatusCreated(location string) Response {
 //
 // It indicates that the request has been accepted for processing, but the
 // processing has not been completed.
-func (r Response) StatusAccepted() Response {
+func (r Body) StatusAccepted() Body {
 	r.statusCode = http.StatusAccepted
 	return r
 }
@@ -27,7 +27,7 @@ func (r Response) StatusAccepted() Response {
 //
 // It indicates that the request was successful but there is no content to
 // return. Commonly used for DELETE operations or updates with no response body.
-func (r Response) StatusNoContent() Response {
+func (r Body) StatusNoContent() Body {
 	r.statusCode = http.StatusNoContent
 	return r
 }
@@ -40,7 +40,7 @@ func (r Response) StatusNoContent() Response {
 // Moved Permanently is intended for GET requests.
 //
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections#permanent_redirections
-func (r Response) StatusMovedPermanently(location string) Response {
+func (r Body) StatusMovedPermanently(location string) Body {
 	r.statusCode = http.StatusMovedPermanently
 	r.redirectLocation = location
 	return r
@@ -50,7 +50,7 @@ func (r Response) StatusMovedPermanently(location string) Response {
 //
 // It indicates that the requested resource has been temporarily moved to the
 // given location.
-func (r Response) StatusFound(location string) Response {
+func (r Body) StatusFound(location string) Body {
 	r.statusCode = http.StatusFound
 	r.redirectLocation = location
 	return r
@@ -60,7 +60,7 @@ func (r Response) StatusFound(location string) Response {
 // header.
 //
 // See Other is used for redirection in response to POST requests.
-func (r Response) StatusSeeOther(location string) Response {
+func (r Body) StatusSeeOther(location string) Body {
 	r.statusCode = http.StatusSeeOther
 	r.redirectLocation = location
 	return r
@@ -70,7 +70,7 @@ func (r Response) StatusSeeOther(location string) Response {
 //
 // It indicates that the resource has not been modified since the version
 // specified by the request headers. Used for conditional requests and caching.
-func (r Response) StatusNotModified() Response {
+func (r Body) StatusNotModified() Body {
 	r.statusCode = http.StatusNotModified
 	return r
 }
@@ -80,7 +80,7 @@ func (r Response) StatusNotModified() Response {
 //
 // Temporary Redirect is like 302 Found but guarantees that the HTTP method
 // will not be changed when the redirected request is made.
-func (r Response) StatusTemporaryRedirect(location string) Response {
+func (r Body) StatusTemporaryRedirect(location string) Body {
 	r.statusCode = http.StatusTemporaryRedirect
 	r.redirectLocation = location
 	return r
@@ -92,7 +92,7 @@ func (r Response) StatusTemporaryRedirect(location string) Response {
 // Permanent Redirect is intended for non-GET requests.
 //
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections#permanent_redirections
-func (r Response) StatusPermanentRedirect(location string) Response {
+func (r Body) StatusPermanentRedirect(location string) Body {
 	r.statusCode = http.StatusPermanentRedirect
 	r.redirectLocation = location
 	return r
@@ -104,7 +104,7 @@ func (r Response) StatusPermanentRedirect(location string) Response {
 //
 // It indicates that the server cannot process the request due to client error,
 // such as malformed request syntax or invalid request parameters.
-func (r Response) StatusBadRequest() Response {
+func (r Body) StatusBadRequest() Body {
 	r.statusCode = http.StatusBadRequest
 	return r
 }
@@ -113,7 +113,7 @@ func (r Response) StatusBadRequest() Response {
 //
 // It indicates that authentication is required and has failed or has not been
 // provided.
-func (r Response) StatusUnauthorized() Response {
+func (r Body) StatusUnauthorized() Body {
 	r.statusCode = http.StatusUnauthorized
 	return r
 }
@@ -122,7 +122,7 @@ func (r Response) StatusUnauthorized() Response {
 //
 // It indicates that the server understood the request but refuses to authorize
 // it. Unlike 401, authenticating will make no difference.
-func (r Response) StatusForbidden() Response {
+func (r Body) StatusForbidden() Body {
 	r.statusCode = http.StatusForbidden
 	return r
 }
@@ -130,7 +130,7 @@ func (r Response) StatusForbidden() Response {
 // StatusNotFound sets the response as 404 Not Found.
 //
 // It indicates that the server cannot find the requested resource.
-func (r Response) StatusNotFound() Response {
+func (r Body) StatusNotFound() Body {
 	r.statusCode = http.StatusNotFound
 	return r
 }
@@ -139,7 +139,7 @@ func (r Response) StatusNotFound() Response {
 //
 // It indicates that the request method is known by the server but is not
 // supported by the target resource.
-func (r Response) StatusMethodNotAllowed() Response {
+func (r Body) StatusMethodNotAllowed() Body {
 	r.statusCode = http.StatusMethodNotAllowed
 	return r
 }
@@ -149,7 +149,7 @@ func (r Response) StatusMethodNotAllowed() Response {
 // It indicates that the server cannot produce a response matching the list of
 // acceptable values defined in the request's proactive content negotiation
 // headers.
-func (r Response) StatusNotAcceptable() Response {
+func (r Body) StatusNotAcceptable() Body {
 	r.statusCode = http.StatusNotAcceptable
 	return r
 }
@@ -158,7 +158,7 @@ func (r Response) StatusNotAcceptable() Response {
 //
 // It indicates that the request conflicts with the current state of the
 // server, such as attempting to create a duplicate resource.
-func (r Response) StatusConflict() Response {
+func (r Body) StatusConflict() Body {
 	r.statusCode = http.StatusConflict
 	return r
 }
@@ -167,7 +167,7 @@ func (r Response) StatusConflict() Response {
 //
 // It indicates that the requested resource is no longer available and will not
 // be available again. This is a stronger statement than 404 Not Found.
-func (r Response) StatusGone() Response {
+func (r Body) StatusGone() Body {
 	r.statusCode = http.StatusGone
 	return r
 }
@@ -176,7 +176,7 @@ func (r Response) StatusGone() Response {
 //
 // It indicates that the request was well-formed but was unable to be followed
 // due to semantic errors, such as validation failures.
-func (r Response) StatusUnprocessableEntity() Response {
+func (r Body) StatusUnprocessableEntity() Body {
 	r.statusCode = http.StatusUnprocessableEntity
 	return r
 }
@@ -185,7 +185,7 @@ func (r Response) StatusUnprocessableEntity() Response {
 //
 // It indicates that the user has sent too many requests in a given amount of
 // time. Used for rate limiting.
-func (r Response) StatusTooManyRequests() Response {
+func (r Body) StatusTooManyRequests() Body {
 	r.statusCode = http.StatusTooManyRequests
 	return r
 }
@@ -196,7 +196,7 @@ func (r Response) StatusTooManyRequests() Response {
 //
 // It indicates that the server encountered an unexpected condition that
 // prevented it from fulfilling the request.
-func (r Response) StatusInternalServerError() Response {
+func (r Body) StatusInternalServerError() Body {
 	r.statusCode = http.StatusInternalServerError
 	return r
 }
@@ -205,7 +205,7 @@ func (r Response) StatusInternalServerError() Response {
 //
 // It indicates that the server does not support the functionality required to
 // fulfill the request.
-func (r Response) StatusNotImplemented() Response {
+func (r Body) StatusNotImplemented() Body {
 	r.statusCode = http.StatusNotImplemented
 	return r
 }
@@ -214,7 +214,7 @@ func (r Response) StatusNotImplemented() Response {
 //
 // It indicates that the server is currently unable to handle the request due
 // to temporary overload or scheduled maintenance.
-func (r Response) StatusServiceUnavailable() Response {
+func (r Body) StatusServiceUnavailable() Body {
 	r.statusCode = http.StatusServiceUnavailable
 	return r
 }
