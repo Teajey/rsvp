@@ -30,7 +30,7 @@ func msgpackHandler(mediaType string, w io.Writer, res *Response) (bool, error) 
 	dev.Log("Rendering msgpack...")
 	err := msgpack.NewEncoder(w).Encode(res.Data)
 	if err != nil {
-		return true, fmt.Errorf("failed to render data as msgpack: %w", err)
+		return true, fmt.Errorf("rendering data as msgpack: %w", err)
 	}
 
 	return true, nil
