@@ -1,4 +1,4 @@
-# RSVP
+# rsvp
 
 My "functional" wrapper around Golang's [`net/http` server stuff](https://pkg.go.dev/net/http#hdr-Servers)
 
