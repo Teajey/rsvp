@@ -1,6 +1,11 @@
 package rsvp_test
 
 import (
+	"bytes"
+	"compress/flate"
+	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,42 +14,97 @@ import (
 	"github.com/Teajey/rsvp/internal/assert"
 )
 
-type cookieSetter func(*http.Cookie)
-
-type T struct {
-	t *testing.T
+func echoHandler(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("echoHandler error: %s", err)
+		return rsvp.Data(err.Error()).StatusBadRequest()
+	}
+	return rsvp.Data(string(body))
 }
 
-func (t T) handler(w rsvp.ResponseWriter, r *http.Request, s cookieSetter) rsvp.Response {
-	cookies, err := http.ParseCookie("hello=world")
-	assert.FatalErr(t.t, "cookie parse", err)
-	s(cookies[0])
-	return rsvp.Blank()
-}
+func compressionMiddleware(cfg rsvp.Config, next func(w rsvp.ResponseWriter, r *http.Request) rsvp.Response) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var buf bytes.Buffer
 
-func middleware(next func(w rsvp.ResponseWriter, r *http.Request, s cookieSetter) rsvp.Response) func(w http.ResponseWriter, r *http.Request) rsvp.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) rsvp.HandlerFunc {
-		setter := func(cookie *http.Cookie) {
-			http.SetCookie(w, cookie)
+		r.Body = http.MaxBytesReader(w, flate.NewReader(r.Body), 10_000_000) // 10MB limit to protect against zip bombs
+
+		fl, err := flate.NewWriter(&buf, flate.BestCompression)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to init deflate writer: %s", err), http.StatusInternalServerError)
+			return
 		}
-		return func(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
-			return next(w, r, setter)
+
+		status, err := rsvp.Write(fl, cfg, w.Header(), r, next)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("RSVP failed to write: %s", err), http.StatusInternalServerError)
+			return
+		}
+		err = fl.Close()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to close deflate writer: %s", err), http.StatusInternalServerError)
+			return
+		}
+
+		err = rsvp.WriteResponse(status, w, &buf)
+		if err != nil {
+			log.Printf("Failed to write response: %s", err)
 		}
 	}
 }
 
-func TestMiddlewareBeforeWriteResponse(t *testing.T) {
+func compressionClient(reqBody string, handler http.HandlerFunc) (status int, body string, err error) {
+	rec := httptest.NewRecorder()
+
+	var buf bytes.Buffer
+	fl, err := flate.NewWriter(&buf, flate.BestCompression)
+	if err != nil {
+		err = fmt.Errorf("initing deflate writer: %s", err)
+		return
+	}
+
+	_, err = fl.Write([]byte(reqBody))
+	if err != nil {
+		err = fmt.Errorf("writing deflate: %s", err)
+		return
+	}
+	err = fl.Close()
+	if err != nil {
+		err = fmt.Errorf("closing deflate writer: %s", err)
+		return
+	}
+	req := httptest.NewRequest("POST", "/", &buf)
+
+	handler(rec, req)
+	status = rec.Code
+
+	res := rec.Result()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("failed to copy to http.ResponseWriter: %s", err)
+		}
+	}()
+
+	bodyBytes, err := io.ReadAll(flate.NewReader(res.Body))
+	if err != nil {
+		err = fmt.Errorf("reading deflated response: %s", err)
+		return
+	}
+	body = string(bodyBytes)
+
+	return
+}
+
+func TestWithCompressionMiddleware(t *testing.T) {
 	cfg := rsvp.Config{}
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a := middleware(T{t}.handler)
-		b := a(w, r)
-		rsvp.AdaptHandlerFunc(cfg, b)(w, r)
-	}))
-	defer server.Close()
 
-	res, err := http.Get(server.URL)
-	assert.FatalErr(t, "server response", err)
+	handler := compressionMiddleware(cfg, echoHandler)
 
-	assert.Eq(t, "status code", res.StatusCode, 200)
-	assert.Eq(t, "expected cookie header", "hello=world", res.Header.Get("Set-Cookie"))
+	reqBody := "Hello, world!"
+
+	status, respBody, err := compressionClient(reqBody, handler)
+	assert.FatalErr(t, "client", err)
+
+	assert.Eq(t, "status code", status, 200)
+	assert.Eq(t, "expected body", reqBody, respBody)
 }

@@ -25,7 +25,7 @@ func write(response rsvp.Response, rw http.ResponseWriter, r *http.Request, cfg 
 	handler := func(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
 		return response
 	}
-	return rsvp.WriteResponse(cfg, rw, r, handler)
+	return rsvp.WriteHandler(cfg, rw, r, handler)
 }
 
 func TestStringBody(t *testing.T) {

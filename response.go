@@ -69,7 +69,7 @@ type ResponseWriter interface {
 }
 
 // Write the result of handler to w. Returns an HTTP status code, and may write headers to wh.
-func Write(cfg Config, w io.Writer, wh http.Header, r *http.Request, handler HandlerFunc) (int, error) {
+func Write(w io.Writer, cfg Config, wh http.Header, r *http.Request, handler HandlerFunc) (int, error) {
 	rw := responseWriter{
 		writer: w,
 		header: wh,
