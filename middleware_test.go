@@ -53,7 +53,7 @@ func compressionMiddleware(cfg rsvp.Config, next func(w rsvp.ResponseWriter, r *
 	}
 }
 
-func compressionClient(reqBody string, handler http.HandlerFunc) (status int, body string, err error) {
+func compressionClient(handler http.Handler, method, target, reqBody string) (status int, body string, err error) {
 	rec := httptest.NewRecorder()
 
 	var buf bytes.Buffer
@@ -73,9 +73,9 @@ func compressionClient(reqBody string, handler http.HandlerFunc) (status int, bo
 		err = fmt.Errorf("closing deflate writer: %s", err)
 		return
 	}
-	req := httptest.NewRequest("POST", "/", &buf)
+	req := httptest.NewRequest(method, target, &buf)
 
-	handler(rec, req)
+	handler.ServeHTTP(rec, req)
 	status = rec.Code
 
 	res := rec.Result()
@@ -97,12 +97,12 @@ func compressionClient(reqBody string, handler http.HandlerFunc) (status int, bo
 
 func TestWithCompressionMiddleware(t *testing.T) {
 	cfg := rsvp.Config{}
-
-	handler := compressionMiddleware(cfg, echoHandler)
+	m := rsvp.NewServeMux()
+	m.Std.HandleFunc("POST /{$}", compressionMiddleware(cfg, echoHandler))
 
 	reqBody := "Hello, world!"
 
-	status, respBody, err := compressionClient(reqBody, handler)
+	status, respBody, err := compressionClient(m, "POST", "/", reqBody)
 	assert.FatalErr(t, "client", err)
 
 	assert.Eq(t, "status code", status, 200)
