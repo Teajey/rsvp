@@ -65,6 +65,8 @@ func Blank() Response
 
 func Data(data any) Response
 
+func (res *Response) MediaTypes(cfg Config) iter.Seq[string]
+
 func (r Response) StatusAccepted() Response
 
 func (r Response) StatusBadRequest() Response
