@@ -46,11 +46,11 @@ var extToProposalMap = map[string]string{
 
 var extendedMediaTypes []string = nil
 
-type mediaTypeExtensionHandler = func(mediaType string, w io.Writer, res *Response) (bool, error)
+type mediaTypeExtensionHandler = func(mediaType string, w io.Writer, res *Body) (bool, error)
 
 var mediaTypeExtensionHandlers []mediaTypeExtensionHandler = nil
 
-func (res *Response) determineSupported(cfg Config) []string {
+func (res *Body) determineSupported(cfg Config) []string {
 	supported := slices.Collect(res.MediaTypes(cfg))
 	dev.Log("supported %v", supported)
 
@@ -66,14 +66,14 @@ func determineExt(r *http.Request) string {
 	return ext
 }
 
-func (res *Response) determineMediaType(ext, accept string, supported []string) string {
+func (res *Body) determineMediaType(ext, accept string, supported []string) string {
 	mediaType := chooseMediaType(ext, supported, content.ParseAccept(accept))
 	dev.Log("mediaType %#v", mediaType)
 
 	return mediaType
 }
 
-func (res *Response) determineContentType(mediaType string, wh http.Header) {
+func (res *Body) determineContentType(mediaType string, wh http.Header) {
 	contentType := mediaTypeToContentType[mediaType]
 
 	dev.Log("Setting content-type to %#v", contentType)
@@ -132,7 +132,7 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) st
 	return ""
 }
 
-// MediaTypes returns the sequence of media types (e.g. text/plain) in the order that this [Response] will propose.
+// MediaTypes returns the sequence of media types (e.g. text/plain) in the order that this [Body] will propose.
 //
 // The order generally follows this pattern:
 //  1. Type-specific (Html wrapper, string, bytes)
@@ -140,7 +140,7 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) st
 //  3. Interface implementations (CSV)
 //  4. Template-based (HTML template, text template)
 //  5. Golang-native fallback (Gob)
-func (res *Response) MediaTypes(cfg Config) iter.Seq[string] {
+func (res *Body) MediaTypes(cfg Config) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		if res.predeterminedMediaType != "" {
 			dev.Log("Overriding media-types with %s", res.predeterminedMediaType)

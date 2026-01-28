@@ -31,6 +31,63 @@ func WriteResponse(status int, w http.ResponseWriter, r io.Reader) error
 
 TYPES
 
+type Body struct {
+	Data any
+	TemplateName string
+
+	// Has unexported fields.
+}
+
+func Blank() Body
+
+func Data(data any) Body
+
+func (res *Body) MediaTypes(cfg Config) iter.Seq[string]
+
+func (r Body) StatusAccepted() Body
+
+func (r Body) StatusBadRequest() Body
+
+func (r Body) StatusConflict() Body
+
+func (r Body) StatusCreated(location string) Body
+
+func (r Body) StatusForbidden() Body
+
+func (r Body) StatusFound(location string) Body
+
+func (r Body) StatusGone() Body
+
+func (r Body) StatusInternalServerError() Body
+
+func (r Body) StatusMethodNotAllowed() Body
+
+func (r Body) StatusMovedPermanently(location string) Body
+
+func (r Body) StatusNoContent() Body
+
+func (r Body) StatusNotAcceptable() Body
+
+func (r Body) StatusNotFound() Body
+
+func (r Body) StatusNotImplemented() Body
+
+func (r Body) StatusNotModified() Body
+
+func (r Body) StatusPermanentRedirect(location string) Body
+
+func (r Body) StatusSeeOther(location string) Body
+
+func (r Body) StatusServiceUnavailable() Body
+
+func (r Body) StatusTemporaryRedirect(location string) Body
+
+func (r Body) StatusTooManyRequests() Body
+
+func (r Body) StatusUnauthorized() Body
+
+func (r Body) StatusUnprocessableEntity() Body
+
 type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
@@ -45,69 +102,12 @@ type Csv interface {
 }
 
 type Handler interface {
-	ServeHTTP(w ResponseWriter, r *http.Request) Response
+	ServeHTTP(w ResponseWriter, r *http.Request) Body
 }
 
-type HandlerFunc func(w ResponseWriter, r *http.Request) Response
+type HandlerFunc func(w ResponseWriter, r *http.Request) Body
 
-func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *http.Request) Response
-
-type Response struct {
-	Data any
-	TemplateName string
-
-	// Has unexported fields.
-}
-
-func Blank() Response
-
-func Data(data any) Response
-
-func (res *Response) MediaTypes(cfg Config) iter.Seq[string]
-
-func (r Response) StatusAccepted() Response
-
-func (r Response) StatusBadRequest() Response
-
-func (r Response) StatusConflict() Response
-
-func (r Response) StatusCreated(location string) Response
-
-func (r Response) StatusForbidden() Response
-
-func (r Response) StatusFound(location string) Response
-
-func (r Response) StatusGone() Response
-
-func (r Response) StatusInternalServerError() Response
-
-func (r Response) StatusMethodNotAllowed() Response
-
-func (r Response) StatusMovedPermanently(location string) Response
-
-func (r Response) StatusNoContent() Response
-
-func (r Response) StatusNotAcceptable() Response
-
-func (r Response) StatusNotFound() Response
-
-func (r Response) StatusNotImplemented() Response
-
-func (r Response) StatusNotModified() Response
-
-func (r Response) StatusPermanentRedirect(location string) Response
-
-func (r Response) StatusSeeOther(location string) Response
-
-func (r Response) StatusServiceUnavailable() Response
-
-func (r Response) StatusTemporaryRedirect(location string) Response
-
-func (r Response) StatusTooManyRequests() Response
-
-func (r Response) StatusUnauthorized() Response
-
-func (r Response) StatusUnprocessableEntity() Response
+func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *http.Request) Body
 
 type ResponseWriter interface {
 	Header() http.Header
@@ -123,6 +123,6 @@ func NewServeMux() *ServeMux
 
 func (m *ServeMux) Handle(pattern string, handler Handler)
 
-func (m *ServeMux) HandleFunc(pattern string, handler func(ResponseWriter, *http.Request) Response)
+func (m *ServeMux) HandleFunc(pattern string, handler func(ResponseWriter, *http.Request) Body)
 
 func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request)

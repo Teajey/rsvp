@@ -11,7 +11,7 @@ ServeHTTP(http.ResponseWriter, *http.Request)
 rsvp's handler interface:
 
 ```go
-ServeHTTP(rsvp.ResponseWriter, *http.Request) rsvp.Response
+ServeHTTP(rsvp.ResponseWriter, *http.Request) rsvp.Body
 ```
 
 ## Features
@@ -26,7 +26,7 @@ ServeHTTP(rsvp.ResponseWriter, *http.Request) rsvp.Response
    - [x] `application/vnd.msgpack` (optional extension behind -tags=rsvp_msgpack)
    - [ ] Others?
  - Extension matching on GET requests:
-   - `/users/123` → Returns default media type (determined by the value of Response)
+   - `/users/123` → Returns default media type (determined by the value of Body)
    - `/users/123.json` → Forces `application/json`
    - `/users/123.xml` → Forces `application/xml`
    - `/users/123.csv` → Forces `text/csv`
@@ -48,11 +48,11 @@ Not with rsvp 🫠
 
 ```go
 if r.Method != http.MethodPut {
-	return rsvp.Response{Data: "Use PUT"}.StatusMethodNotAllowed()
+	return rsvp.Body{Data: "Use PUT"}.StatusMethodNotAllowed()
 }
 ```
 
-(Wrapping this with your own convenience method, i.e. `func ErrorMethodNotAllowed(message string) rsvp.Response` is encouraged. You can decide for yourself how errors are represented)
+(Wrapping this with your own convenience method, i.e. `func ErrorMethodNotAllowed(message string) rsvp.Body` is encouraged. You can decide for yourself how errors are represented)
 
 ## Quickstart
 
@@ -63,7 +63,7 @@ func main() {
     http.ListenAndServe(":8080", mux)
 }
 
-func getUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
+func getUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
     return rsvp.Data(User{ID: 123}) // In content negotiation this will be offered as, in order; JSON, XML, and encoding/gob.
 }
 ```
@@ -82,7 +82,7 @@ func getUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
 mux.Config.HtmlTemplate = template.Must(template.ParseGlob("templates/html/*.gotmpl"))
 mux.Config.TextTemplate = template.Must(template.ParseGlob("templates/text/*.gotmpl"))
 
-func showUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
+func showUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
     w.DefaultTemplateName("user.gotmpl") // Must exist in HtmlTemplate and/or TextTemplate for formats to match
     return rsvp.Data(User{ID: 123}) // In content negotiation this will be offered as JSON, XML, HTML, plain text, and encoding/gob.
 }
@@ -98,7 +98,7 @@ type APIError struct {
     Code    string `json:"code"`
 }
 
-func ErrorNotFound(msg string) rsvp.Response {
+func ErrorNotFound(msg string) rsvp.Body {
     return rsvp.Data(APIError{Message: msg, Code: "NOT_FOUND"}).StatusNotFound()
 }
 ```
@@ -118,7 +118,7 @@ func (ul UserList) MarshalCsv(w *csv.Writer) error {
     return nil
 }
 
-func userList(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
+func userList(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
     return rsvp.Data(users) // In content negotiation this will be offered as JSON, XML, CSV, and encoding/gob.
 }
 ```
