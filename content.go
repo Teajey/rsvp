@@ -4,7 +4,7 @@ import (
 	"iter"
 	"strings"
 
-	"github.com/Teajey/rsvp/internal/log"
+	"github.com/Teajey/rsvp/internal/dev"
 )
 
 const (
@@ -64,11 +64,11 @@ func mediaTypesEqual(a string, b string) bool {
 
 func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) string {
 	if ext != "" {
-		log.Dev("Checking extension: %#v", ext)
+		dev.Log("Checking extension: %#v", ext)
 		if a, ok := extToProposalMap[ext]; ok {
-			log.Dev("proposing %#v", a)
+			dev.Log("proposing %#v", a)
 			for _, s := range supported {
-				log.Dev("offering  %#v", s)
+				dev.Log("offering  %#v", s)
 				if mediaTypesEqual(s, a) {
 					return s
 				}
@@ -77,11 +77,11 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) st
 		return ""
 	}
 
-	log.Dev("Checking accept list")
+	dev.Log("Checking accept list")
 	for a := range accept {
-		log.Dev("proposing %#v", a)
+		dev.Log("proposing %#v", a)
 		for _, s := range supported {
-			log.Dev("offering  %#v", s)
+			dev.Log("offering  %#v", s)
 			if mediaTypesEqual(s, a) {
 				return s
 			}
