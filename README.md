@@ -25,7 +25,11 @@ ServeHTTP(rsvp.ResponseWriter, *http.Request) rsvp.Response
    - [x] `application/vnd.golang.gob` (Golang's [encoding/gob](https://go.dev/blog/gob))
    - [x] `application/vnd.msgpack` (optional extension behind -tags=rsvp_msgpack)
    - [ ] Others?
- - Extension matching. `/users/123 →` returns the default media type as determined by `rsvp.Response` value, `/users/123.json → application/json`, `/users/123.xml → application/xml`
+ - Extension matching on GET requests:
+   - `/users/123` → Returns default media type (determined by the value of Response)
+   - `/users/123.json` → Forces `application/json`
+   - `/users/123.xml` → Forces `application/xml`
+   - `/users/123.csv` → Forces `text/csv`
 
 It's easy for me to lose track of what I've written to [`http.ResponseWriter`](https://pkg.go.dev/net/http#ResponseWriter). Occasionally receiving the old `http: multiple response.WriteHeader calls`
 
@@ -68,11 +72,11 @@ func getUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
 ## Templates
 
 ```go
-mux.Config.HtmlTemplate = template.Must(template.ParseGlob("*.html"))
-mux.Config.TextTemplate = template.Must(template.ParseGlob("*.txt"))
+mux.Config.HtmlTemplate = template.Must(template.ParseGlob("templates/html/*.gotmpl"))
+mux.Config.TextTemplate = template.Must(template.ParseGlob("templates/text/*.gotmpl"))
 
 func showUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
-    w.DefaultTemplateName("user.gotmpl")
+    w.DefaultTemplateName("user.gotmpl") // Must exist in HtmlTemplate and/or TextTemplate for formats to match
     return rsvp.Data(User{ID: 123}) // In content negotiation this will be offered as JSON, XML, HTML, plain text, and encoding/gob.
 }
 ```
@@ -93,9 +97,11 @@ func ErrorNotFound(msg string) rsvp.Response {
 ## CSV
 
 ```go
-var users []User
+type UserList []User
 
-func (ul []User) MarshalCsv(w *csv.Writer) error {
+var users UserList
+
+func (ul UserList) MarshalCsv(w *csv.Writer) error {
     w.Write([]string{"ID", "Name", "Email"})
     for _, u := range ul {
         w.Write([]string{u.ID, u.Name, u.Email})
