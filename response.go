@@ -1,14 +1,14 @@
 // Package rsvp is a Go web framework built around content negotiation.
 //
 // The framework automatically negotiates response format based on the Accept
-// header, supporting JSON, XML, HTML, plain text, binary, Gob,
+// header, supporting JSON, XML, HTML, plain text, CSV, binary, Gob,
 // and MessagePack (using -tags=rsvp_msgpack).
 // This content negotiation extends to ALL responses, including redirects,
 // allowing you to provide rich feedback in many contexts.
 //
 // The Accept header should be expected to be used as standardized; weighting is supported.
 // If an acceptable fallback is not reached, a 406 Not Acceptable will be returned, and
-// the Content-Type and body will be set as if Accept: */* was sent.
+// the Content-Type and body will be set as if Accept: */* had been sent.
 //
 // This makes rsvp particularly well-suited for APIs that serve multiple clients
 // (browsers, mobile apps, CLI tools) and for taking advantage of principles such
@@ -27,7 +27,7 @@ type Body struct {
 	// TemplateName sets the template that this Body may attempt to select from
 	// [Config.HtmlTemplate] or [Config.TextTemplate],
 	//
-	// [ResponseWriter.DefaultTemplateName] may also be used to set a default once on a handler.
+	// [ResponseWriter.DefaultTemplateName] may also be used to avoiding setting TemplateName multiple times on every return point of a single handler.
 	//
 	// It is not an error if a template is not found for one of the two templates; other formats will be attempted.
 	TemplateName string
