@@ -22,7 +22,7 @@ type Response struct {
 	// Data is the raw data of the response payload to be rendered.
 	//
 	// IMPORTANT: A nil Data renders as JSON "null\n", not an empty response.
-	// Use Data: "" for a blank response body.
+	// Use Data("") for a blank text/plain response body, or [Blank] for a blank response with no Content-Type.
 	Data any
 	// TemplateName sets the template that this Response may attempt to select from
 	// [Config.HtmlTemplate] or [Config.TextTemplate],
