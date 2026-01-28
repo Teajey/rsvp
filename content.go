@@ -1,9 +1,14 @@
 package rsvp
 
 import (
+	"io"
 	"iter"
+	"net/http"
+	"path/filepath"
+	"slices"
 	"strings"
 
+	"github.com/Teajey/rsvp/internal/content"
 	"github.com/Teajey/rsvp/internal/dev"
 )
 
@@ -37,6 +42,42 @@ var extToProposalMap = map[string]string{
 	"xml":  SupportedMediaTypeXml,
 	"bin":  SupportedMediaTypeBytes,
 	"gob":  SupportedMediaTypeGob,
+}
+
+var extendedMediaTypes []string = nil
+
+type mediaTypeExtensionHandler = func(mediaType string, w io.Writer, res *Response) (bool, error)
+
+var mediaTypeExtensionHandlers []mediaTypeExtensionHandler = nil
+
+func (res *Response) determineSupported(cfg Config) []string {
+	supported := slices.Collect(res.mediaTypes(cfg))
+	dev.Log("supported %v", supported)
+
+	return supported
+}
+
+func determineExt(r *http.Request) string {
+	var ext string
+	if r.Method == http.MethodGet {
+		ext = strings.TrimPrefix(filepath.Ext(r.URL.Path), ".")
+	}
+
+	return ext
+}
+
+func (res *Response) determineMediaType(ext, accept string, supported []string) string {
+	mediaType := chooseMediaType(ext, supported, content.ParseAccept(accept))
+	dev.Log("mediaType %#v", mediaType)
+
+	return mediaType
+}
+
+func (res *Response) determineContentType(mediaType string, wh http.Header) {
+	contentType := mediaTypeToContentType[mediaType]
+
+	dev.Log("Setting content-type to %#v", contentType)
+	wh.Set("Content-Type", contentType)
 }
 
 // mediatype string m must be well-formed
@@ -89,4 +130,67 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) st
 	}
 
 	return ""
+}
+
+// mediaTypes returns the sequence of media types (e.g. text/plain) in the order that this [Response] will propose.
+func (res *Response) mediaTypes(cfg Config) iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if res.predeterminedMediaType != "" {
+			dev.Log("Overriding media-types with %s", res.predeterminedMediaType)
+			yield(string(res.predeterminedMediaType))
+			return
+		}
+
+		switch res.Data.(type) {
+		case Html:
+			yield(SupportedMediaTypeHtml)
+			return
+		case string:
+			if !yield(SupportedMediaTypePlaintext) {
+				return
+			}
+		case []byte:
+			yield(SupportedMediaTypeBytes)
+			return
+		}
+
+		if !yield(SupportedMediaTypeJson) {
+			return
+		}
+
+		if !yield(SupportedMediaTypeXml) {
+			return
+		}
+
+		_, ok := res.Data.(Csv)
+		if ok {
+			if !yield(SupportedMediaTypeCsv) {
+				return
+			}
+		}
+
+		if !yield(SupportedMediaTypeGob) {
+			return
+		}
+
+		for _, mediaType := range extendedMediaTypes {
+			if !yield(mediaType) {
+				return
+			}
+		}
+
+		if res.TemplateName != "" {
+			if cfg.HtmlTemplate != nil {
+				if !yield(SupportedMediaTypeHtml) {
+					return
+				}
+			}
+
+			if cfg.TextTemplate != nil {
+				if !yield(SupportedMediaTypePlaintext) {
+					return
+				}
+			}
+		}
+	}
 }
