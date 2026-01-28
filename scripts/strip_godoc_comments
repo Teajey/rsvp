@@ -34,7 +34,9 @@ for line, next_line in window(fileinput.input()):
     line = line.removesuffix("\n")
     next_line = next_line.removesuffix("\n")
 
-    if line.startswith("type ") and line.endswith(" struct {"):
+    if line.startswith("type ") and (
+        line.endswith(" struct {") or line.endswith(" interface {")
+    ):
         struct = True
     elif struct and line.endswith("}"):
         struct = False
