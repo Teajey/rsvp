@@ -70,12 +70,12 @@ type ResponseWriter interface {
 
 // Write the result of handler to w. Returns an HTTP status code, and may write headers to wh.
 func Write(cfg Config, w io.Writer, wh http.Header, r *http.Request, handler HandlerFunc) (int, error) {
-	p := responseWriter{
+	rw := responseWriter{
 		writer: w,
 		header: wh,
 	}
-	response := handler(&p, r)
-	return p.write(&response, r, cfg)
+	response := handler(&rw, r)
+	return rw.write(&response, r, cfg)
 }
 
 type responseWriter struct {
@@ -84,12 +84,12 @@ type responseWriter struct {
 	defaultTemplateName string
 }
 
-func (p *responseWriter) DefaultTemplateName(name string) {
-	p.defaultTemplateName = name
+func (w *responseWriter) DefaultTemplateName(name string) {
+	w.defaultTemplateName = name
 }
 
-func (p *responseWriter) Header() http.Header {
-	return p.header
+func (w *responseWriter) Header() http.Header {
+	return w.header
 }
 
 func (res *Response) isBlank() bool {
@@ -214,18 +214,18 @@ func (res *Response) determineContentType(mediaType string, h http.Header) {
 }
 
 // Write the [Response] to the [http.ResponseWriter] with the given [Config].
-func (p *responseWriter) write(res *Response, r *http.Request, cfg Config) (status int, err error) {
+func (w *responseWriter) write(res *Response, r *http.Request, cfg Config) (status int, err error) {
 	dev.Log("config: %#v", cfg)
 	status = cmp.Or(res.statusCode, 200)
 
-	if res.TemplateName == "" && p.defaultTemplateName != "" {
-		dev.Log("Using default template name: %v", p.defaultTemplateName)
-		res.TemplateName = p.defaultTemplateName
+	if res.TemplateName == "" && w.defaultTemplateName != "" {
+		dev.Log("Using default template name: %v", w.defaultTemplateName)
+		res.TemplateName = w.defaultTemplateName
 	}
 
 	accept := r.Header.Get("Accept")
 
-	wh := p.Header()
+	wh := w.Header()
 
 	contentType := wh.Get("Content-Type")
 	if contentType != "" {
@@ -256,7 +256,7 @@ func (p *responseWriter) write(res *Response, r *http.Request, cfg Config) (stat
 
 		res.determineContentType(mediaType, wh)
 
-		err = render(res, mediaType, p.writer, cfg)
+		err = render(res, mediaType, w.writer, cfg)
 		if err != nil {
 			status = http.StatusInternalServerError
 		}
@@ -289,7 +289,7 @@ func (p *responseWriter) write(res *Response, r *http.Request, cfg Config) (stat
 		return
 	}
 
-	err = render(res, mediaType, p.writer, cfg)
+	err = render(res, mediaType, w.writer, cfg)
 	if err != nil {
 		status = http.StatusInternalServerError
 	}
