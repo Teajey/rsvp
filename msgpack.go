@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Teajey/rsvp/internal/log"
+	"github.com/Teajey/rsvp/internal/dev"
 	msgpack "github.com/vmihailenco/msgpack/v5"
 )
 
@@ -27,7 +27,7 @@ func msgpackHandler(mediaType string, w io.Writer, res *Response) (bool, error) 
 		return false, nil
 	}
 
-	log.Dev("Rendering msgpack...")
+	dev.Log("Rendering msgpack...")
 	err := msgpack.NewEncoder(w).Encode(res.Data)
 	if err != nil {
 		return true, fmt.Errorf("failed to render data as msgpack: %w", err)

@@ -29,7 +29,7 @@ import (
 	text "text/template"
 
 	"github.com/Teajey/rsvp/internal/content"
-	"github.com/Teajey/rsvp/internal/log"
+	"github.com/Teajey/rsvp/internal/dev"
 )
 
 type Response struct {
@@ -101,7 +101,7 @@ var extendedMediaTypes []string = nil
 func (res *Response) mediaTypes(cfg Config) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		if res.predeterminedMediaType != "" {
-			log.Dev("Overriding media-types with %s", res.predeterminedMediaType)
+			dev.Log("Overriding media-types with %s", res.predeterminedMediaType)
 			yield(string(res.predeterminedMediaType))
 			return
 		}
@@ -185,7 +185,7 @@ var mediaTypeExtensionHandlers []mediaTypeExtensionHandler = nil
 
 func (res *Response) determineSupported(cfg Config) []string {
 	supported := slices.Collect(res.mediaTypes(cfg))
-	log.Dev("supported %v", supported)
+	dev.Log("supported %v", supported)
 
 	return supported
 }
@@ -201,7 +201,7 @@ func determineExt(r *http.Request) string {
 
 func (res *Response) determineMediaType(ext, accept string, supported []string) string {
 	mediaType := chooseMediaType(ext, supported, content.ParseAccept(accept))
-	log.Dev("mediaType %#v", mediaType)
+	dev.Log("mediaType %#v", mediaType)
 
 	return mediaType
 }
@@ -209,17 +209,17 @@ func (res *Response) determineMediaType(ext, accept string, supported []string) 
 func (res *Response) determineContentType(mediaType string, h http.Header) {
 	contentType := mediaTypeToContentType[mediaType]
 
-	log.Dev("Setting content-type to %#v", contentType)
+	dev.Log("Setting content-type to %#v", contentType)
 	h.Set("Content-Type", contentType)
 }
 
 // Write the [Response] to the [http.ResponseWriter] with the given [Config].
 func (p *responseWriter) write(res *Response, r *http.Request, cfg Config) (status int, err error) {
-	log.Dev("config: %#v", cfg)
+	dev.Log("config: %#v", cfg)
 	status = cmp.Or(res.statusCode, 200)
 
 	if res.TemplateName == "" && p.defaultTemplateName != "" {
-		log.Dev("Using default template name: %v", p.defaultTemplateName)
+		dev.Log("Using default template name: %v", p.defaultTemplateName)
 		res.TemplateName = p.defaultTemplateName
 	}
 
@@ -233,7 +233,7 @@ func (p *responseWriter) write(res *Response, r *http.Request, cfg Config) (stat
 		_, ok := mediaTypeToContentType[aMediaType]
 		if ok {
 			res.predeterminedMediaType = aMediaType
-			log.Dev("Content-Type is set to a recognised type, so predeterminedMediaType set to %#v", res.predeterminedMediaType)
+			dev.Log("Content-Type is set to a recognised type, so predeterminedMediaType set to %#v", res.predeterminedMediaType)
 		}
 	}
 
@@ -242,12 +242,12 @@ func (p *responseWriter) write(res *Response, r *http.Request, cfg Config) (stat
 	mediaType := res.determineMediaType(ext, accept, supported)
 
 	if 300 <= res.statusCode && res.statusCode < 400 {
-		log.Dev("Redirect")
+		dev.Log("Redirect")
 
 		wh.Set("Location", res.redirectLocation)
 
 		if res.isBlank() || accept == "" {
-			log.Dev("Redirect returning empty")
+			dev.Log("Redirect returning empty")
 			return
 		}
 
@@ -269,10 +269,10 @@ func (p *responseWriter) write(res *Response, r *http.Request, cfg Config) (stat
 			return
 		}
 
-		log.Dev("NotAcceptable. Ignoring Accept header and setting status code to 406...")
+		dev.Log("NotAcceptable. Ignoring Accept header and setting status code to 406...")
 		status = http.StatusNotAcceptable
 		mediaType = chooseMediaType(ext, supported, content.ParseAccept(""))
-		log.Dev("new mediaType %#v", mediaType)
+		dev.Log("new mediaType %#v", mediaType)
 	}
 
 	if mediaType == "text/plain" && cfg.TextTemplate == nil && res.TemplateName != "" {
@@ -285,7 +285,7 @@ func (p *responseWriter) write(res *Response, r *http.Request, cfg Config) (stat
 	}
 
 	if res.isBlank() {
-		log.Dev("Early returning because body is empty")
+		dev.Log("Early returning because body is empty")
 		return
 	}
 
@@ -302,12 +302,12 @@ var ErrFailedToMatchHtmlTemplate = errors.New("TemplateName was set, but it fail
 func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 	switch mediaType {
 	case SupportedMediaTypeHtml:
-		log.Dev("Rendering html...")
+		dev.Log("Rendering html...")
 		if res.TemplateName != "" {
-			log.Dev("Template name is set, so expecting a template...")
+			dev.Log("Template name is set, so expecting a template...")
 
 			if tm := cfg.HtmlTemplate.Lookup(res.TemplateName); tm != nil {
-				log.Dev("Executing HtmlTemplate...")
+				dev.Log("Executing HtmlTemplate...")
 				err := tm.ExecuteTemplate(w, res.TemplateName, res.Data)
 				if err != nil {
 					return fmt.Errorf("failed to render data in html template %s: %w", res.TemplateName, err)
@@ -317,20 +317,20 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 
 			return ErrFailedToMatchHtmlTemplate
 		}
-		log.Dev("Not using a template because either HtmlTemplate or TemplateName is not set...")
+		dev.Log("Not using a template because either HtmlTemplate or TemplateName is not set...")
 
 		_, err := w.Write([]byte(res.Data.(Html)))
 		if err != nil {
 			return fmt.Errorf("failed to write string as HTML: %w", err)
 		}
 	case SupportedMediaTypePlaintext:
-		log.Dev("Rendering plain text...")
+		dev.Log("Rendering plain text...")
 
 		if res.TemplateName != "" {
-			log.Dev("Template name is set, so expecting a template...")
+			dev.Log("Template name is set, so expecting a template...")
 
 			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
-				log.Dev("Executing TextTemplate...")
+				dev.Log("Executing TextTemplate...")
 				err := tm.ExecuteTemplate(w, res.TemplateName, res.Data)
 				if err != nil {
 					return fmt.Errorf("failed to render data in text template %s: %w", res.TemplateName, err)
@@ -340,10 +340,10 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 
 			return ErrFailedToMatchTextTemplate
 		}
-		log.Dev("Not using a template because either TextTemplate or TemplateName is not set...")
+		dev.Log("Not using a template because either TextTemplate or TemplateName is not set...")
 
 		if data, ok := res.Data.(string); ok {
-			log.Dev("Can write data directly because it is a string...")
+			dev.Log("Can write data directly because it is a string...")
 			_, err := w.Write([]byte(data))
 			if err != nil {
 				return fmt.Errorf("failed to render data as string: %w", err)
@@ -353,7 +353,7 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 
 		return fmt.Errorf("trying to render data as %s but this type is not supported: %#v", SupportedMediaTypePlaintext, res.Data)
 	case SupportedMediaTypeJson:
-		log.Dev("Rendering json...")
+		dev.Log("Rendering json...")
 		enc := json.NewEncoder(w)
 		enc.SetIndent(cfg.JsonPrefix, cfg.JsonIndent)
 		err := enc.Encode(res.Data)
@@ -361,7 +361,7 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 			return fmt.Errorf("failed to render data as JSON: %w", err)
 		}
 	case SupportedMediaTypeXml:
-		log.Dev("Rendering xml...")
+		dev.Log("Rendering xml...")
 		enc := xml.NewEncoder(w)
 		enc.Indent(cfg.XmlPrefix, cfg.XmlIndent)
 		err := enc.Encode(res.Data)
@@ -373,20 +373,20 @@ func render(res *Response, mediaType string, w io.Writer, cfg Config) error {
 		if !ok {
 			return fmt.Errorf("trying to write %#v, but it does not implement rsvp.Csv", res.Data)
 		}
-		log.Dev("Rendering csv...")
+		dev.Log("Rendering csv...")
 		wr := csv.NewWriter(w)
 		err := data.MarshalCsv(wr)
 		if err != nil {
 			return fmt.Errorf("failed to render data as CSV: %w", err)
 		}
 	case SupportedMediaTypeBytes:
-		log.Dev("Rendering bytes...")
+		dev.Log("Rendering bytes...")
 		_, err := w.Write(res.Data.([]byte))
 		if err != nil {
 			return fmt.Errorf("failed to render data as bytes: %w", err)
 		}
 	case SupportedMediaTypeGob:
-		log.Dev("Rendering gob...")
+		dev.Log("Rendering gob...")
 		err := gob.NewEncoder(w).Encode(res.Data)
 		if err != nil {
 			return fmt.Errorf("failed to render data as encoding/gob: %w", err)
