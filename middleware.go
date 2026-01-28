@@ -6,6 +6,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/Teajey/rsvp/internal/dev"
 )
 
 // AdaptHandlerFunc provides rsvp as middleware.
@@ -14,25 +16,35 @@ import (
 // It is also useful for wrapping rsvp handlers in middleware that requires access to [http.ResponseWriter].
 func AdaptHandlerFunc(cfg Config, next HandlerFunc) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		err := WriteResponse(cfg, rw, r, next)
+		err := WriteHandler(cfg, rw, r, next)
 		if err != nil {
-			log.Printf("%s", err)
+			log.Printf("[RSVP ERROR]: %s", err)
 		}
 	}
 }
 
-// Writes the result of handler to rw according to cfg.
-func WriteResponse(cfg Config, rw http.ResponseWriter, r *http.Request, handler HandlerFunc) error {
+// WriteHandler writes the result of handler to rw according to cfg.
+func WriteHandler(cfg Config, rw http.ResponseWriter, r *http.Request, handler HandlerFunc) error {
 	var buf bytes.Buffer
-	status, err := Write(cfg, &buf, rw.Header(), r, handler)
+	status, err := Write(&buf, cfg, rw.Header(), r, handler)
 	if err != nil {
 		http.Error(rw, "RSVP failed to write a response", http.StatusInternalServerError)
-		return fmt.Errorf("[ERROR] RSVP failed to write a response: %w", err)
+		return fmt.Errorf("writing response: %w", err)
 	}
-	rw.WriteHeader(status)
-	_, err = io.Copy(rw, &buf)
+	err = WriteResponse(status, rw, &buf)
 	if err != nil {
-		return fmt.Errorf("[ERROR] RSVP failed to copy to http.ResponseWriter: %w", err)
+		return fmt.Errorf("writing header: %w", err)
+	}
+	return nil
+}
+
+// WriteResponse calls w.WriteHeader(status) and copies r to w.
+func WriteResponse(status int, w http.ResponseWriter, r io.Reader) error {
+	dev.Log("Setting status to %d", status)
+	w.WriteHeader(status)
+	_, err := io.Copy(w, r)
+	if err != nil {
+		return fmt.Errorf("copying to http.ResponseWriter: %w", err)
 	}
 	return nil
 }
