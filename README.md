@@ -68,8 +68,11 @@ func getUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Response {
 }
 ```
 
-> [!IMPORTANT]: nil Data renders as JSON "null\n", not an empty response.
-> Use Data: "" for a blank response body.
+> [!IMPORTANT]
+> nil Data renders as JSON "null\n", not an empty response.
+> 
+> Use `rsvp.Data("")` for a blank text/plain response body, or `rsvp.Blank()` for a blank response with no Content-Type.
+
 
 ## Examples
 
