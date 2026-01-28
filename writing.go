@@ -36,7 +36,9 @@ type ResponseWriter interface {
 //
 // NOTE: This function is for advanced lower-level use cases.
 //
-// This function, alongside [WriteResponse], should be used to wrap [Handler]s in middleware that requires access to [http.ResponseWriter]. See this test for an example: https://github.com/Teajey/rsvp/blob/main/middleware_test.go
+// This function, alongside [WriteResponse], should be used to wrap [Handler] in middleware that requires _write_ access to [http.ResponseWriter]. [AdaptHandler] and [AdaptHandlerFunc] may be used for simpler standard middleware that does not write to [http.ResponseWriter].
+//
+// See this test for an example: https://github.com/Teajey/rsvp/blob/main/middleware_test.go
 func Write(w io.Writer, cfg Config, wh http.Header, r *http.Request, handler HandlerFunc) (int, error) {
 	rw := responseWriter{
 		writer: w,

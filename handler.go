@@ -5,6 +5,8 @@ import (
 )
 
 // ServeMux is a wrapper of [http.ServeMux] that consumes [Handler].
+//
+// Use [NewServeMux] to instantiate it.
 type ServeMux struct {
 	// Access to the underlying standard http.ServeMux from net/http.
 	//
@@ -23,12 +25,12 @@ func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.Std.ServeHTTP(w, r)
 }
 
-// Handler defines the basic signature of RSVP's http handlers
+// Handler is rsvp's counterpart to [http.Handler].
 type Handler interface {
 	ServeHTTP(w ResponseWriter, r *http.Request) Body
 }
 
-// HandlerFunc is a counterpart to [http.HandlerFunc]
+// HandlerFunc is a counterpart to [http.HandlerFunc].
 type HandlerFunc func(w ResponseWriter, r *http.Request) Body
 
 func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *http.Request) Body {

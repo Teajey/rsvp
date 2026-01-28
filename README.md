@@ -24,7 +24,7 @@ ServeHTTP(rsvp.ResponseWriter, *http.Request) rsvp.Body
    - [x] `application/xml`
    - [x] `application/vnd.golang.gob` (Golang's [encoding/gob](https://go.dev/blog/gob))
    - [x] `application/vnd.msgpack` (optional extension behind -tags=rsvp_msgpack)
-   - [ ] Others?
+   - [ ] Others to be implemented?
  - Extension matching on GET requests:
    - `/users/123` → Returns default media type (determined by the value of Body)
    - `/users/123.json` → Forces `application/json`
