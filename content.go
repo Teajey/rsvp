@@ -51,7 +51,7 @@ type mediaTypeExtensionHandler = func(mediaType string, w io.Writer, res *Respon
 var mediaTypeExtensionHandlers []mediaTypeExtensionHandler = nil
 
 func (res *Response) determineSupported(cfg Config) []string {
-	supported := slices.Collect(res.mediaTypes(cfg))
+	supported := slices.Collect(res.MediaTypes(cfg))
 	dev.Log("supported %v", supported)
 
 	return supported
@@ -132,8 +132,15 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) st
 	return ""
 }
 
-// mediaTypes returns the sequence of media types (e.g. text/plain) in the order that this [Response] will propose.
-func (res *Response) mediaTypes(cfg Config) iter.Seq[string] {
+// MediaTypes returns the sequence of media types (e.g. text/plain) in the order that this [Response] will propose.
+//
+// The order generally follows this pattern:
+//  1. Type-specific (Html wrapper, string, bytes)
+//  2. Generic structured (JSON, XML)
+//  3. Interface implementations (CSV)
+//  4. Template-based (HTML template, text template)
+//  5. Golang-native fallback (Gob)
+func (res *Response) MediaTypes(cfg Config) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		if res.predeterminedMediaType != "" {
 			dev.Log("Overriding media-types with %s", res.predeterminedMediaType)
@@ -150,8 +157,9 @@ func (res *Response) mediaTypes(cfg Config) iter.Seq[string] {
 				return
 			}
 		case []byte:
-			yield(SupportedMediaTypeBytes)
-			return
+			if !yield(SupportedMediaTypeBytes) {
+				return
+			}
 		}
 
 		if !yield(SupportedMediaTypeJson) {
@@ -169,16 +177,6 @@ func (res *Response) mediaTypes(cfg Config) iter.Seq[string] {
 			}
 		}
 
-		if !yield(SupportedMediaTypeGob) {
-			return
-		}
-
-		for _, mediaType := range extendedMediaTypes {
-			if !yield(mediaType) {
-				return
-			}
-		}
-
 		if res.TemplateName != "" {
 			if cfg.HtmlTemplate != nil {
 				if !yield(SupportedMediaTypeHtml) {
@@ -190,6 +188,16 @@ func (res *Response) mediaTypes(cfg Config) iter.Seq[string] {
 				if !yield(SupportedMediaTypePlaintext) {
 					return
 				}
+			}
+		}
+
+		if !yield(SupportedMediaTypeGob) {
+			return
+		}
+
+		for _, mediaType := range extendedMediaTypes {
+			if !yield(mediaType) {
+				return
 			}
 		}
 	}
