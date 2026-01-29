@@ -84,8 +84,9 @@ OpenAPI-first workflows: If your primary goal is generating documentation from c
 
 ```go
 func main() {
-    mux := rsvp.NewServeMux()
-    mux.HandleFunc("GET /users/{id}", getUser)
+    mux := http.NewServeMux()
+    cfg := rsvp.Config{}
+    mux.HandleFunc("GET /users/{id}", rsvp.AdaptHandlerFunc(cfg, getUser))
     http.ListenAndServe(":8080", mux)
 }
 
@@ -104,8 +105,10 @@ func getUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
 ### Templates
 
 ```go
-mux.Config.HtmlTemplate = template.Must(template.ParseGlob("templates/html/*.gotmpl"))
-mux.Config.TextTemplate = template.Must(template.ParseGlob("templates/text/*.gotmpl"))
+rsvp.Config{
+    HtmlTemplate: template.Must(template.ParseGlob("templates/html/*.gotmpl")),
+    TextTemplate: template.Must(template.ParseGlob("templates/text/*.gotmpl")),
+}
 
 func showUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
     w.DefaultTemplateName("user.gotmpl") // Must exist in HtmlTemplate and/or TextTemplate for formats to match

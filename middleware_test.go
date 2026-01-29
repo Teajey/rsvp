@@ -96,9 +96,9 @@ func compressionClient(handler http.Handler, method, target, reqBody string) (st
 }
 
 func TestWithCompressionMiddleware(t *testing.T) {
+	m := http.NewServeMux()
 	cfg := rsvp.Config{}
-	m := rsvp.NewServeMux()
-	m.Std.HandleFunc("POST /{$}", compressionMiddleware(cfg, echoHandler))
+	m.HandleFunc("POST /{$}", compressionMiddleware(cfg, echoHandler))
 
 	reqBody := "Hello, world!"
 

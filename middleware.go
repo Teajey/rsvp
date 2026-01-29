@@ -10,12 +10,9 @@ import (
 	"github.com/Teajey/rsvp/internal/dev"
 )
 
-// AdaptHandlerFunc provides rsvp as middleware.
+// AdaptHandlerFunc wraps a [HandlerFunc] as an [http.HandlerFunc] with the given config.
 //
-// NOTE: This function is for advanced lower-level use cases. [ServeMux] should be used by default.
-//
-// It may be used to add rsvp to discrete handlers.
-// It is also useful for wrapping rsvp handlers in middleware that requires access to [http.ResponseWriter].
+// This is the primary entrypoint to using rsvp.
 func AdaptHandlerFunc(cfg Config, next HandlerFunc) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		err := WriteHandler(cfg, rw, r, next)
@@ -59,10 +56,9 @@ func WriteResponse(status int, w http.ResponseWriter, r io.Reader) error {
 	return nil
 }
 
-// AdaptHandler provides rsvp as middleware.
+// AdaptHandler wraps a [Handler] as an [http.Handler] with the given config.
 //
-// It may be used to add rsvp to discrete handlers.
-// It is also useful for wrapping rsvp handlers in middleware that requires access to [http.ResponseWriter].
-func AdaptHandler(cfg Config, next Handler) http.Handler {
-	return AdaptHandlerFunc(cfg, next.ServeHTTP)
+// This is the primary entrypoint to using rsvp.
+func AdaptHandler(config Config, next Handler) http.Handler {
+	return AdaptHandlerFunc(config, next.ServeHTTP)
 }
