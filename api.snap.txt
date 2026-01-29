@@ -19,7 +19,7 @@ var ErrFailedToMatchTextTemplate = errors.New("TemplateName was set, but it fail
 
 FUNCTIONS
 
-func AdaptHandler(cfg Config, next Handler) http.Handler
+func AdaptHandler(config Config, next Handler) http.Handler
 
 func AdaptHandlerFunc(cfg Config, next HandlerFunc) http.HandlerFunc
 
@@ -113,16 +113,3 @@ type ResponseWriter interface {
 	Header() http.Header
 	DefaultTemplateName(name string)
 }
-
-type ServeMux struct {
-	Std    *http.ServeMux
-	Config Config
-}
-
-func NewServeMux() *ServeMux
-
-func (m *ServeMux) Handle(pattern string, handler Handler)
-
-func (m *ServeMux) HandleFunc(pattern string, handler func(ResponseWriter, *http.Request) Body)
-
-func (m *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request)
