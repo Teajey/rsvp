@@ -1,6 +1,8 @@
 # rsvp
 
-My value-oriented wrapper around Golang's [net/http](https://pkg.go.dev/net/http).
+net/http middleware with a type-driven Handler interface, handling content negotiation automatically.
+
+---
 
 The default net/http handler interface:
 
@@ -8,15 +10,19 @@ The default net/http handler interface:
 ServeHTTP(http.ResponseWriter, *http.Request)
 ```
 
-rsvp's handler interface:
+rsvp's handler interface looks like this:
 
 ```go
-ServeHTTP(rsvp.ResponseWriter, *http.Request) rsvp.Body
+type Body struct {
+    Data any,
+}
+
+ServeHTTP(ResponseWriter, *http.Request) Body
 ```
 
 ## Features
 
-- Content Negotiation. rsvp will attempt to provide the data in a supported media-type that is requested via the Accept header, or even the URL's file extension in the case of GET requests:
+- Content Negotiation. rsvp will attempt to provide Data in a supported media type that is requested via the Accept header; or even the URL's file extension in the case of GET requests:
   - [x] `application/json`
   - [x] `text/html`
   - [x] `text/plain`
