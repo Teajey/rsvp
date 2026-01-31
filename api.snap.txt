@@ -25,10 +25,6 @@ func AdaptHandlerFunc(cfg Config, next HandlerFunc) http.HandlerFunc
 
 func Write(w io.Writer, cfg Config, wh http.Header, r *http.Request, handler HandlerFunc) (int, error)
 
-func WriteHandler(cfg Config, rw http.ResponseWriter, r *http.Request, handler HandlerFunc) error
-
-func WriteResponse(status int, w http.ResponseWriter, r io.Reader) error
-
 TYPES
 
 type Body struct {
