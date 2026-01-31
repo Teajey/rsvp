@@ -25,11 +25,9 @@ func echoHandler(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
 
 func compressionMiddleware(cfg rsvp.Config, next func(w rsvp.ResponseWriter, r *http.Request) rsvp.Body) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var buf bytes.Buffer
-
 		r.Body = http.MaxBytesReader(w, flate.NewReader(r.Body), 10_000_000) // 10MB limit to protect against zip bombs
 
-		fl, err := flate.NewWriter(&buf, flate.BestCompression)
+		fl, err := flate.NewWriter(w, flate.BestCompression)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to init deflate writer: %s", err), http.StatusInternalServerError)
 			return
@@ -46,10 +44,7 @@ func compressionMiddleware(cfg rsvp.Config, next func(w rsvp.ResponseWriter, r *
 			return
 		}
 
-		err = rsvp.WriteResponse(status, w, &buf)
-		if err != nil {
-			log.Printf("Failed to write response: %s", err)
-		}
+		w.WriteHeader(status)
 	}
 }
 
