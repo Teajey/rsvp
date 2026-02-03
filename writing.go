@@ -32,11 +32,11 @@ type ResponseWriter interface {
 	DefaultTemplateName(name string)
 }
 
-// Write the result of handler to w. Returns an HTTP status code, and may write headers to wh.
+// Write the result of handler to w. May write headers to w.Header().
 //
 // NOTE: This function is for advanced lower-level use cases.
 //
-// This function, alongside [WriteResponse], should be used to wrap [Handler] in middleware that requires _write_ access to [http.ResponseWriter]. [Handle] and [HandleFunc] may be used for simpler standard middleware that does not write to [http.ResponseWriter].
+// This function should be used to wrap [Handler] in middleware that requires write access to [http.ResponseWriter].
 //
 // See this test for an example: https://github.com/Teajey/rsvp/blob/main/middleware_test.go
 func Write(w http.ResponseWriter, cfg Config, r *http.Request, handler HandlerFunc) error {
