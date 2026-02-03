@@ -42,10 +42,12 @@ func compressionMiddleware(cfg rsvp.Config, next func(w rsvp.ResponseWriter, r *
 			return
 		}
 
-		err = rsvp.Write(compressedResponseWriter{
+		rw := compressedResponseWriter{
 			ResponseWriter: w,
 			flate:          fl,
-		}, cfg, r, next)
+		}
+
+		err = rsvp.Write(rw, cfg, r, next)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("RSVP failed to write: %s", err), http.StatusInternalServerError)
 			return
