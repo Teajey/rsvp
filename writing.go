@@ -148,7 +148,7 @@ func render(res *Body, mediaType string, w io.Writer, cfg Config) error {
 	switch mediaType {
 	case SupportedMediaTypeHtml:
 		dev.Log("Rendering html...")
-		if res.TemplateName != "" {
+		if res.TemplateName != "" && cfg.HtmlTemplate != nil {
 			dev.Log("Template name is set, so expecting a template...")
 
 			if tm := cfg.HtmlTemplate.Lookup(res.TemplateName); tm != nil {
@@ -166,7 +166,7 @@ func render(res *Body, mediaType string, w io.Writer, cfg Config) error {
 	case SupportedMediaTypePlaintext:
 		dev.Log("Rendering plain text...")
 
-		if res.TemplateName != "" {
+		if res.TemplateName != "" && cfg.TextTemplate != nil {
 			dev.Log("Template name is set, so expecting a template...")
 
 			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
