@@ -23,6 +23,15 @@ func echoHandler(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
 	return rsvp.Data(string(body))
 }
 
+type compressedResponseWriter struct {
+	http.ResponseWriter
+	flate *flate.Writer
+}
+
+func (w compressedResponseWriter) Write(data []byte) (int, error) {
+	return w.flate.Write(data)
+}
+
 func compressionMiddleware(cfg rsvp.Config, next func(w rsvp.ResponseWriter, r *http.Request) rsvp.Body) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, flate.NewReader(r.Body), 10_000_000) // 10MB limit to protect against zip bombs
@@ -33,7 +42,10 @@ func compressionMiddleware(cfg rsvp.Config, next func(w rsvp.ResponseWriter, r *
 			return
 		}
 
-		status, err := rsvp.Write(fl, cfg, w.Header(), r, next)
+		err = rsvp.Write(compressedResponseWriter{
+			ResponseWriter: w,
+			flate:          fl,
+		}, cfg, r, next)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("RSVP failed to write: %s", err), http.StatusInternalServerError)
 			return
@@ -43,8 +55,6 @@ func compressionMiddleware(cfg rsvp.Config, next func(w rsvp.ResponseWriter, r *
 			http.Error(w, fmt.Sprintf("Failed to close deflate writer: %s", err), http.StatusInternalServerError)
 			return
 		}
-
-		w.WriteHeader(status)
 	}
 }
 
