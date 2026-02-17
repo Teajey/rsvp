@@ -23,7 +23,7 @@ func AdaptHandler(config Config, next Handler) http.Handler
 
 func AdaptHandlerFunc(cfg Config, next HandlerFunc) http.HandlerFunc
 
-func Write(w http.ResponseWriter, cfg Config, r *http.Request, handler HandlerFunc) error
+func Write(w http.ResponseWriter, r *http.Request, cfg Config, handler HandlerFunc) error
 
 TYPES
 

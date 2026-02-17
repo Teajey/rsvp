@@ -17,7 +17,7 @@ import (
 
 func makeHandler(response rsvp.Body, cfg rsvp.Config) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		return rsvp.Write(w, cfg, r, func(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
+		return rsvp.Write(w, r, cfg, func(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
 			return response
 		})
 	}
