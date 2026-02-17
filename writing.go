@@ -40,7 +40,7 @@ type ResponseWriter interface {
 // This function should be used to wrap [Handler] in middleware that requires write access to [http.ResponseWriter].
 //
 // See this test for an example: https://github.com/Teajey/rsvp/blob/main/middleware_test.go
-func Write(w http.ResponseWriter, cfg Config, r *http.Request, handler HandlerFunc) error {
+func Write(w http.ResponseWriter, r *http.Request, cfg Config, handler HandlerFunc) error {
 	rw := responseWriter{
 		writer: w,
 	}

@@ -10,7 +10,7 @@ import (
 // This is the primary entrypoint to using rsvp.
 func AdaptHandlerFunc(cfg Config, next HandlerFunc) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		err := Write(rw, cfg, r, next)
+		err := Write(rw, r, cfg, next)
 		if err != nil {
 			log.Printf("rsvp failed to write a response: %s", err)
 			return
