@@ -107,15 +107,15 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) st
 	if ext != "" {
 		dev.Log("Checking extension: %#v", ext)
 		if a, ok := extToProposalMap[ext]; ok {
-			dev.Log("proposing %#v", a)
-			for _, s := range supported {
-				dev.Log("offering  %#v", s)
-				if mediaTypesEqual(s, a) {
-					return s
-				}
+			if slices.Contains(supported, a) {
+				dev.Log("Setting %#v as sole supported type", a)
+				supported = []string{a}
+			} else {
+				supported = []string{}
 			}
+		} else {
+			supported = []string{}
 		}
-		return ""
 	}
 
 	dev.Log("Checking accept list")

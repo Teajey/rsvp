@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 
 	"github.com/Teajey/rsvp/internal/content"
 	"github.com/Teajey/rsvp/internal/dev"
@@ -111,8 +112,11 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 
 	if mediaType == "" {
 		if ext != "" {
-			w.writer.WriteHeader(http.StatusNotFound)
-			return
+			a, ok := extToProposalMap[ext]
+			if !ok || !slices.Contains(supported, a) {
+				w.writer.WriteHeader(http.StatusNotFound)
+				return
+			}
 		}
 
 		dev.Log("NotAcceptable. Ignoring Accept header and setting status code to 406...")
