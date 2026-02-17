@@ -1,6 +1,6 @@
 # rsvp
 
-net/http middleware with a type-driven Handler interface, handling content negotiation automatically.
+net/http middleware providing a Handler interface with type-driven content negotiation.
 
 ---
 

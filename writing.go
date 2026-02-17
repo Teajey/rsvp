@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 
 	"github.com/Teajey/rsvp/internal/content"
 	"github.com/Teajey/rsvp/internal/dev"
@@ -32,25 +33,23 @@ type ResponseWriter interface {
 	DefaultTemplateName(name string)
 }
 
-// Write the result of handler to w. Returns an HTTP status code, and may write headers to wh.
+// Write the result of handler to w. May write headers to w.Header().
 //
 // NOTE: This function is for advanced lower-level use cases.
 //
-// This function, alongside [WriteResponse], should be used to wrap [Handler] in middleware that requires _write_ access to [http.ResponseWriter]. [Handle] and [HandleFunc] may be used for simpler standard middleware that does not write to [http.ResponseWriter].
+// This function should be used to wrap [Handler] in middleware that requires write access to [http.ResponseWriter].
 //
 // See this test for an example: https://github.com/Teajey/rsvp/blob/main/middleware_test.go
-func Write(w io.Writer, cfg Config, wh http.Header, r *http.Request, handler HandlerFunc) (int, error) {
+func Write(w http.ResponseWriter, r *http.Request, cfg Config, handler HandlerFunc) error {
 	rw := responseWriter{
 		writer: w,
-		header: wh,
 	}
 	response := handler(&rw, r)
 	return rw.write(&response, r, cfg)
 }
 
 type responseWriter struct {
-	writer              io.Writer
-	header              http.Header
+	writer              http.ResponseWriter
 	defaultTemplateName string
 }
 
@@ -59,13 +58,13 @@ func (w *responseWriter) DefaultTemplateName(name string) {
 }
 
 func (w *responseWriter) Header() http.Header {
-	return w.header
+	return w.writer.Header()
 }
 
 // Write the [Body] to the [http.ResponseWriter] with the given [Config].
-func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (status int, err error) {
+func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err error) {
 	dev.Log("config: %#v", cfg)
-	status = cmp.Or(res.statusCode, 200)
+	status := cmp.Or(res.statusCode, 200)
 
 	if res.TemplateName == "" && w.defaultTemplateName != "" {
 		dev.Log("Using default template name: %v", w.defaultTemplateName)
@@ -97,6 +96,7 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (status i
 
 		if res.isBlank() || accept == "" {
 			dev.Log("Redirect returning empty")
+			w.writer.WriteHeader(status)
 			return
 		}
 
@@ -105,17 +105,18 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (status i
 
 		res.determineContentType(mediaType, wh)
 
+		w.writer.WriteHeader(status)
 		err = render(res, mediaType, w.writer, cfg)
-		if err != nil {
-			status = http.StatusInternalServerError
-		}
 		return
 	}
 
 	if mediaType == "" {
 		if ext != "" {
-			status = http.StatusNotFound
-			return
+			a, ok := extToProposalMap[ext]
+			if !ok || !slices.Contains(supported, a) {
+				w.writer.WriteHeader(http.StatusNotFound)
+				return
+			}
 		}
 
 		dev.Log("NotAcceptable. Ignoring Accept header and setting status code to 406...")
@@ -125,7 +126,7 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (status i
 	}
 
 	if mediaType == "text/plain" && cfg.TextTemplate == nil && res.TemplateName != "" {
-		status = http.StatusNotFound
+		w.writer.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -135,13 +136,12 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (status i
 
 	if res.isBlank() {
 		dev.Log("Early returning because body is empty")
+		w.writer.WriteHeader(status)
 		return
 	}
 
+	w.writer.WriteHeader(status)
 	err = render(res, mediaType, w.writer, cfg)
-	if err != nil {
-		status = http.StatusInternalServerError
-	}
 	return
 }
 
@@ -152,7 +152,7 @@ func render(res *Body, mediaType string, w io.Writer, cfg Config) error {
 	switch mediaType {
 	case SupportedMediaTypeHtml:
 		dev.Log("Rendering html...")
-		if res.TemplateName != "" {
+		if res.TemplateName != "" && cfg.HtmlTemplate != nil {
 			dev.Log("Template name is set, so expecting a template...")
 
 			if tm := cfg.HtmlTemplate.Lookup(res.TemplateName); tm != nil {
@@ -170,7 +170,7 @@ func render(res *Body, mediaType string, w io.Writer, cfg Config) error {
 	case SupportedMediaTypePlaintext:
 		dev.Log("Rendering plain text...")
 
-		if res.TemplateName != "" {
+		if res.TemplateName != "" && cfg.TextTemplate != nil {
 			dev.Log("Template name is set, so expecting a template...")
 
 			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
