@@ -1,7 +1,8 @@
-// Package rsvp is a Go web framework built around content negotiation.
+// Package rsvp is net/http middleware that handles content negotiation by inspecting
+// data that you return to it through it's custom Handler interface.
 //
-// The framework automatically negotiates response format based on the Accept
-// header, supporting JSON, XML, HTML, plain text, CSV, binary, Gob,
+// The middleware negotiates response format based on the Accept
+// header, supporting JSON, XML, HTML, plain text, CSV, binary,
 // and MessagePack (using -tags=rsvp_msgpack).
 // This content negotiation extends to ALL responses, including redirects,
 // allowing you to provide rich feedback in many contexts.

@@ -19,7 +19,6 @@ const (
 	SupportedMediaTypeBytes     string = "application/octet-stream"
 	SupportedMediaTypeJson      string = "application/json"
 	SupportedMediaTypeXml       string = "application/xml"
-	SupportedMediaTypeGob       string = "application/vnd.golang.gob"
 )
 
 var mediaTypeToContentType = map[string]string{
@@ -30,7 +29,6 @@ var mediaTypeToContentType = map[string]string{
 	SupportedMediaTypeBytes:     "application/octet-stream",
 	SupportedMediaTypeJson:      "application/json",
 	SupportedMediaTypeXml:       "application/xml",
-	SupportedMediaTypeGob:       "application/vnd.golang.gob",
 }
 
 var extToProposalMap = map[string]string{
@@ -41,7 +39,6 @@ var extToProposalMap = map[string]string{
 	"json": SupportedMediaTypeJson,
 	"xml":  SupportedMediaTypeXml,
 	"bin":  SupportedMediaTypeBytes,
-	"gob":  SupportedMediaTypeGob,
 }
 
 var extendedMediaTypes []string = nil
@@ -107,15 +104,15 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) st
 	if ext != "" {
 		dev.Log("Checking extension: %#v", ext)
 		if a, ok := extToProposalMap[ext]; ok {
-			dev.Log("proposing %#v", a)
-			for _, s := range supported {
-				dev.Log("offering  %#v", s)
-				if mediaTypesEqual(s, a) {
-					return s
-				}
+			if slices.Contains(supported, a) {
+				dev.Log("Setting %#v as sole supported type", a)
+				supported = []string{a}
+			} else {
+				supported = []string{}
 			}
+		} else {
+			supported = []string{}
 		}
-		return ""
 	}
 
 	dev.Log("Checking accept list")
@@ -139,7 +136,6 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) st
 //  2. Generic structured (JSON, XML)
 //  3. Interface implementations (CSV)
 //  4. Template-based (HTML template, text template)
-//  5. Golang-native fallback (Gob)
 func (res *Body) MediaTypes(cfg Config) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		if res.predeterminedMediaType != "" {
@@ -192,10 +188,6 @@ func (res *Body) MediaTypes(cfg Config) iter.Seq[string] {
 			if !yield(mediaType) {
 				return
 			}
-		}
-
-		if !yield(SupportedMediaTypeGob) {
-			return
 		}
 	}
 }

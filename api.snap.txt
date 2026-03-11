@@ -9,7 +9,6 @@ const (
 	SupportedMediaTypeBytes     string = "application/octet-stream"
 	SupportedMediaTypeJson      string = "application/json"
 	SupportedMediaTypeXml       string = "application/xml"
-	SupportedMediaTypeGob       string = "application/vnd.golang.gob"
 )
 
 VARIABLES
@@ -23,11 +22,7 @@ func AdaptHandler(config Config, next Handler) http.Handler
 
 func AdaptHandlerFunc(cfg Config, next HandlerFunc) http.HandlerFunc
 
-func Write(w io.Writer, cfg Config, wh http.Header, r *http.Request, handler HandlerFunc) (int, error)
-
-func WriteHandler(cfg Config, rw http.ResponseWriter, r *http.Request, handler HandlerFunc) error
-
-func WriteResponse(status int, w http.ResponseWriter, r io.Reader) error
+func Write(w http.ResponseWriter, r *http.Request, cfg Config, handler HandlerFunc) error
 
 TYPES
 

@@ -23,32 +23,36 @@ func echoHandler(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
 	return rsvp.Data(string(body))
 }
 
-func compressionMiddleware(cfg rsvp.Config, next func(w rsvp.ResponseWriter, r *http.Request) rsvp.Body) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var buf bytes.Buffer
+type compressedResponseWriter struct {
+	http.ResponseWriter
+	flate *flate.Writer
+}
 
+func (w compressedResponseWriter) Write(data []byte) (int, error) {
+	return w.flate.Write(data)
+}
+
+func compressionMiddleware(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, flate.NewReader(r.Body), 10_000_000) // 10MB limit to protect against zip bombs
 
-		fl, err := flate.NewWriter(&buf, flate.BestCompression)
+		fl, err := flate.NewWriter(w, flate.BestCompression)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to init deflate writer: %s", err), http.StatusInternalServerError)
 			return
 		}
 
-		status, err := rsvp.Write(fl, cfg, w.Header(), r, next)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("RSVP failed to write: %s", err), http.StatusInternalServerError)
-			return
+		rw := compressedResponseWriter{
+			ResponseWriter: w,
+			flate:          fl,
 		}
+
+		next(rw, r)
+
 		err = fl.Close()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to close deflate writer: %s", err), http.StatusInternalServerError)
 			return
-		}
-
-		err = rsvp.WriteResponse(status, w, &buf)
-		if err != nil {
-			log.Printf("Failed to write response: %s", err)
 		}
 	}
 }
@@ -98,7 +102,7 @@ func compressionClient(handler http.Handler, method, target, reqBody string) (st
 func TestWithCompressionMiddleware(t *testing.T) {
 	m := http.NewServeMux()
 	cfg := rsvp.Config{}
-	m.HandleFunc("POST /{$}", compressionMiddleware(cfg, echoHandler))
+	m.HandleFunc("POST /{$}", compressionMiddleware(rsvp.AdaptHandlerFunc(cfg, echoHandler)))
 
 	reqBody := "Hello, world!"
 
