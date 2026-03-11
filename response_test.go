@@ -195,6 +195,29 @@ func TestHtmlTemplate(t *testing.T) {
 	assert.Eq(t, "body contents", "<div>Hello &lt;input&gt; World!</div>", s)
 }
 
+func TestHtmlTemplateErrorWritesToResponseBody(t *testing.T) {
+	body := "Hello <input> World!"
+	res := rsvp.Body{Data: body, TemplateName: "tm"}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "text/html")
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.Config{}
+	cfg.HtmlTemplate = html.New("tm")
+	cfg.HtmlTemplate = html.Must(cfg.HtmlTemplate.Parse(`<div>{{.NonExistent}}</div>`))
+
+	_ = makeHandler(res, cfg)(rec, req)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 200, statusCode)
+
+	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", `<div><span style="background-color: red; color: black;">rsvp stopped writing here because of a template error</span>`, s)
+}
+
 func TestTextTemplateWithName(t *testing.T) {
 	body := "Hello, World!"
 	res := rsvp.Body{Data: body, TemplateName: "tm"}
