@@ -150,6 +150,8 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 var ErrFailedToMatchTextTemplate = errors.New("TemplateName was set, but it failed to match within TextTemplate")
 var ErrFailedToMatchHtmlTemplate = errors.New("TemplateName was set, but it failed to match within HtmlTemplate")
 
+const templateErrorMessage = "rsvp stopped writing here because of a template error"
+
 func render(res *Body, mediaType string, w io.Writer, cfg Config) error {
 	switch mediaType {
 	case SupportedMediaTypeHtml:
@@ -161,6 +163,7 @@ func render(res *Body, mediaType string, w io.Writer, cfg Config) error {
 				dev.Log("Executing HtmlTemplate...")
 				err := tm.ExecuteTemplate(w, res.TemplateName, res.Data)
 				if err != nil {
+					_, _ = fmt.Fprintf(w, `<span style="background-color: red; color: black;">%s</span>`, templateErrorMessage)
 					return fmt.Errorf("rendering data in html template %s: %w", res.TemplateName, err)
 				}
 				break
@@ -179,6 +182,7 @@ func render(res *Body, mediaType string, w io.Writer, cfg Config) error {
 				dev.Log("Executing TextTemplate...")
 				err := tm.ExecuteTemplate(w, res.TemplateName, res.Data)
 				if err != nil {
+					_, _ = fmt.Fprintf(w, "!!ERROR!!%s", templateErrorMessage)
 					return fmt.Errorf("rendering data in text template %s: %w", res.TemplateName, err)
 				}
 				break
