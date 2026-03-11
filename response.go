@@ -2,7 +2,7 @@
 // data that you return to it through it's custom Handler interface.
 //
 // The middleware negotiates response format based on the Accept
-// header, supporting JSON, XML, HTML, plain text, CSV, binary, Gob,
+// header, supporting JSON, XML, HTML, plain text, CSV, binary,
 // and MessagePack (using -tags=rsvp_msgpack).
 // This content negotiation extends to ALL responses, including redirects,
 // allowing you to provide rich feedback in many contexts.

@@ -22,7 +22,6 @@ func TestNilResponse(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -37,7 +36,6 @@ func TestBlankResponse(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -53,7 +51,6 @@ func TestEmptyStringResponse(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -68,7 +65,6 @@ func TestStructResponse(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -83,7 +79,6 @@ func TestSliceResponse(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -98,7 +93,6 @@ func TestMapResponse(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -114,7 +108,6 @@ func TestStringResponse(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -130,7 +123,6 @@ func TestBytesResponse(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -152,7 +144,6 @@ func TestCsvResponse(t *testing.T) {
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeCsv,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -170,7 +161,6 @@ func TestStructResponseWithHtmlTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeHtml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -187,7 +177,6 @@ func TestStructWithoutTemplateNameResponseWithHtmlTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -206,7 +195,6 @@ func TestCsvResponseWithHtmlTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeCsv,
 		rsvp.SupportedMediaTypeHtml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -225,7 +213,6 @@ func TestCsvResponseWithTextTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeCsv,
 		rsvp.SupportedMediaTypePlaintext,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -243,7 +230,6 @@ func TestStructResponseWithTextTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypePlaintext,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -260,7 +246,6 @@ func TestStructWithoutTemplateNameResponseWithTextTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeJson,
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -280,7 +265,6 @@ func TestStructResponseWithTextAndHtmlTemplates(t *testing.T) {
 		rsvp.SupportedMediaTypeHtml,
 		rsvp.SupportedMediaTypePlaintext,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -301,7 +285,6 @@ func TestStringResponseWithTextAndHtmlTemplates(t *testing.T) {
 		rsvp.SupportedMediaTypeHtml,
 		rsvp.SupportedMediaTypePlaintext,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -322,7 +305,6 @@ func TestCsvResponseWithTextAndHtmlTemplates(t *testing.T) {
 		rsvp.SupportedMediaTypeHtml,
 		rsvp.SupportedMediaTypePlaintext,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -341,7 +323,6 @@ func TestBytesResponseWithHtmlTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeHtml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)
@@ -360,7 +341,6 @@ func TestStringResponseWithHtmlTemplate(t *testing.T) {
 		rsvp.SupportedMediaTypeXml,
 		rsvp.SupportedMediaTypeHtml,
 		rsvp.SupportedMediaTypeMsgpack,
-		rsvp.SupportedMediaTypeGob,
 	}
 
 	assert.SlicesEq(t, "media types", expected, actual)

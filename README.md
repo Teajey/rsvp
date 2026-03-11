@@ -29,7 +29,6 @@ ServeHTTP(ResponseWriter, *http.Request) Body
   - [x] `text/csv` (by implementing the rsvp.Csv interface)
   - [x] `application/octet-stream`
   - [x] `application/xml`
-  - [x] `application/vnd.golang.gob` (Golang's [encoding/gob](https://go.dev/blog/gob))
   - [x] `application/vnd.msgpack` (optional extension behind -tags=rsvp_msgpack)
   - [ ] Others to be implemented?
 - Extension matching on GET requests:
@@ -97,7 +96,7 @@ func main() {
 }
 
 func getUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
-    return rsvp.Data(User{ID: 123}) // In content negotiation this will be offered as, in order; JSON, XML, and encoding/gob.
+    return rsvp.Data(User{ID: 123}) // In content negotiation this will be offered as JSON, then XML.
 }
 ```
 
@@ -118,7 +117,7 @@ rsvp.Config{
 
 func showUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
     w.DefaultTemplateName("user.gotmpl") // Must exist in HtmlTemplate and/or TextTemplate for formats to match
-    return rsvp.Data(User{ID: 123}) // In content negotiation this will be offered as JSON, XML, HTML, plain text, and encoding/gob.
+    return rsvp.Data(User{ID: 123}) // In content negotiation this will be offered as JSON, XML, HTML, and plain text.
 }
 ```
 
@@ -153,7 +152,7 @@ func (ul UserList) MarshalCsv(w *csv.Writer) error {
 }
 
 func userList(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
-    return rsvp.Data(users) // In content negotiation this will be offered as JSON, XML, CSV, and encoding/gob.
+    return rsvp.Data(users) // In content negotiation this will be offered as JSON, XML, and CSV.
 }
 ```
 
