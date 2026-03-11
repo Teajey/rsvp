@@ -18,8 +18,6 @@ import (
 // ResponseWriter handles metadata and configuration of the response. It bears its "Writer" name mostly for the sake of keeping rsvp.Handler similar to http.Handler.
 //
 // Its underlying type has a `write` function, but it is not available here because it is controlled indirectly by the [Body] value that [Handler] provides.
-//
-// If you need access to http.ResponseWriter, especially for middleware, you should follow the example of [HandleFunc]'s source code for how to operate rsvp at a lower level from within an [http.Handler].
 type ResponseWriter interface {
 	// Header is equivalent to [http.ResponseWriter.Header]
 	Header() http.Header
@@ -35,10 +33,6 @@ type ResponseWriter interface {
 // Write the result of handler to w. May write headers to w.Header().
 //
 // NOTE: This function is for advanced lower-level use cases.
-//
-// This function should be used to wrap [Handler] in middleware that requires write access to [http.ResponseWriter].
-//
-// See this test for an example: https://github.com/Teajey/rsvp/blob/main/middleware_test.go
 func Write(w http.ResponseWriter, r *http.Request, cfg Config, handler HandlerFunc) error {
 	rw := responseWriter{
 		writer: w,
