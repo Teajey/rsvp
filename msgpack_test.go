@@ -17,7 +17,8 @@ func TestRequestMsgpackInteger(t *testing.T) {
 	req.Header.Set("Accept", "application/vnd.msgpack")
 	rec := httptest.NewRecorder()
 
-	makeHandler(res, rsvp.Config{})(rec, req)
+	err := makeHandler(res, rsvp.Config{})(rec, req)
+	assert.FatalErr(t, "handler", err)
 
 	resp := rec.Result()
 	assert.Eq(t, "Status code", http.StatusOK, resp.StatusCode)
@@ -31,7 +32,8 @@ func TestRequestMsgpackEmptyMapUsingFileExtension(t *testing.T) {
 	req := httptest.NewRequest("GET", "/resource.msgpack", nil)
 	rec := httptest.NewRecorder()
 
-	makeHandler(res, rsvp.Config{})(rec, req)
+	err := makeHandler(res, rsvp.Config{})(rec, req)
+	assert.FatalErr(t, "handler", err)
 
 	resp := rec.Result()
 	assert.Eq(t, "Status code", http.StatusOK, resp.StatusCode)
