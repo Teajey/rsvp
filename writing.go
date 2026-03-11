@@ -63,6 +63,8 @@ func (w *responseWriter) Header() http.Header {
 
 // Write the [Body] to the [http.ResponseWriter] with the given [Config].
 func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err error) {
+	w.writer.Header().Add("Vary", "Accept")
+
 	dev.Log("config: %#v", cfg)
 	status := cmp.Or(res.statusCode, 200)
 

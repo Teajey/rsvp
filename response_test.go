@@ -39,6 +39,7 @@ World!`
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", 200, statusCode)
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Vary header", "Accept", resp.Header.Get("Vary"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", body, s)
 }
