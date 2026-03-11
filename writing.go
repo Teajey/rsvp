@@ -3,7 +3,6 @@ package rsvp
 import (
 	"cmp"
 	"encoding/csv"
-	"encoding/gob"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -234,12 +233,6 @@ func render(res *Body, mediaType string, w io.Writer, cfg Config) error {
 		_, err := w.Write(res.Data.([]byte))
 		if err != nil {
 			return fmt.Errorf("rendering data as bytes: %w", err)
-		}
-	case SupportedMediaTypeGob:
-		dev.Log("Rendering gob...")
-		err := gob.NewEncoder(w).Encode(res.Data)
-		if err != nil {
-			return fmt.Errorf("rendering data as encoding/gob: %w", err)
 		}
 	default:
 		for _, handler := range mediaTypeExtensionHandlers {

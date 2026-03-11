@@ -9,7 +9,6 @@ const (
 	SupportedMediaTypeBytes     string = "application/octet-stream"
 	SupportedMediaTypeJson      string = "application/json"
 	SupportedMediaTypeXml       string = "application/xml"
-	SupportedMediaTypeGob       string = "application/vnd.golang.gob"
 )
 
 VARIABLES
