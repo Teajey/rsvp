@@ -215,7 +215,7 @@ func TestHtmlTemplateErrorWritesToResponseBody(t *testing.T) {
 	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
 
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", `<div><span style="background-color: red; color: black;">rsvp stopped writing here because of a template error</span>`, s)
+	assert.Eq(t, "body contents", `<div><span style="background-color: red; color: white;">rsvp stopped writing here because of a template error</span>`, s)
 }
 
 func TestTextTemplateWithName(t *testing.T) {
