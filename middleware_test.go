@@ -32,7 +32,7 @@ func (w compressedResponseWriter) Write(data []byte) (int, error) {
 	return w.flate.Write(data)
 }
 
-func compressionMiddleware(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+func compressionMiddleware(next http.Handler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, flate.NewReader(r.Body), 10_000_000) // 10MB limit to protect against zip bombs
 
@@ -47,7 +47,7 @@ func compressionMiddleware(next func(w http.ResponseWriter, r *http.Request)) fu
 			flate:          fl,
 		}
 
-		next(rw, r)
+		next.ServeHTTP(rw, r)
 
 		err = fl.Close()
 		if err != nil {
@@ -102,7 +102,7 @@ func compressionClient(handler http.Handler, method, target, reqBody string) (st
 func TestWithCompressionMiddleware(t *testing.T) {
 	m := http.NewServeMux()
 	cfg := rsvp.Config{}
-	m.HandleFunc("POST /{$}", compressionMiddleware(rsvp.AdaptHandlerFunc(cfg, echoHandler)))
+	m.HandleFunc("POST /{$}", compressionMiddleware(rsvp.NewAdapter(cfg).AdaptFunc(echoHandler)))
 
 	reqBody := "Hello, world!"
 

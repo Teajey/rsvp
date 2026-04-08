@@ -33,11 +33,11 @@ type ResponseWriter interface {
 // Write the result of handler to w. May write headers to w.Header().
 //
 // NOTE: This function is for advanced lower-level use cases.
-func Write(w http.ResponseWriter, r *http.Request, cfg Config, handler HandlerFunc) error {
+func Write(w http.ResponseWriter, r *http.Request, cfg Config, handler Handler) error {
 	rw := responseWriter{
 		writer: w,
 	}
-	response := handler(&rw, r)
+	response := handler.ServeHTTP(&rw, r)
 	return rw.write(&response, r, cfg)
 }
 
