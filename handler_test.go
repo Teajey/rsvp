@@ -14,7 +14,7 @@ func TestDefaultTemplateName(t *testing.T) {
 	cfg := rsvp.Config{}
 	cfg.HtmlTemplate = html.Must(html.New("tm").Parse(`<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>`))
 
-	handler := rsvp.AdaptHandlerFunc(cfg, func(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
+	handler := rsvp.NewAdapter(cfg).AdaptFunc(func(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
 		w.DefaultTemplateName("tm")
 		return rsvp.Body{Data: "Hello <input> World!"}
 	})
@@ -23,7 +23,7 @@ func TestDefaultTemplateName(t *testing.T) {
 	req.Header.Set("Accept", "text/html")
 
 	rec := httptest.NewRecorder()
-	handler(rec, req)
+	handler.ServeHTTP(rec, req)
 
 	resp := rec.Result()
 
@@ -36,7 +36,7 @@ func TestDefaultTemplateName(t *testing.T) {
 func TestResponseHeader(t *testing.T) {
 	cfg := rsvp.Config{}
 
-	handler := rsvp.AdaptHandlerFunc(cfg, func(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
+	handler := rsvp.NewAdapter(cfg).AdaptFunc(func(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
 		w.Header().Set("hello", "world")
 		return rsvp.Blank()
 	})
@@ -44,7 +44,7 @@ func TestResponseHeader(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 
 	rec := httptest.NewRecorder()
-	handler(rec, req)
+	handler.ServeHTTP(rec, req)
 
 	resp := rec.Result()
 

@@ -18,13 +18,19 @@ var ErrFailedToMatchTextTemplate = errors.New("TemplateName was set, but it fail
 
 FUNCTIONS
 
-func AdaptHandler(config Config, next Handler) http.Handler
-
-func AdaptHandlerFunc(cfg Config, next HandlerFunc) http.HandlerFunc
-
-func Write(w http.ResponseWriter, r *http.Request, cfg Config, handler HandlerFunc) error
+func Write(w http.ResponseWriter, r *http.Request, cfg Config, handler Handler) error
 
 TYPES
+
+type Adapter struct {
+	// Has unexported fields.
+}
+
+func NewAdapter(cfg Config) Adapter
+
+func (a Adapter) Adapt(next Handler) http.Handler
+
+func (a Adapter) AdaptFunc(next func(w ResponseWriter, r *http.Request) Body) http.HandlerFunc
 
 type Body struct {
 	Data any

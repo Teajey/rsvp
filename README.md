@@ -91,7 +91,10 @@ OpenAPI-first workflows: If your primary goal is generating documentation from c
 func main() {
     mux := http.NewServeMux()
     cfg := rsvp.Config{}
-    mux.HandleFunc("GET /users/{id}", rsvp.AdaptHandlerFunc(cfg, getUser))
+    adapter := rsvp.NewAdapter(cfg)
+    mux.HandleFunc("GET /users/{id}", adapter.AdaptFunc(getUser))
+    mux.HandleFunc("GET /users", adapter.AdaptFunc(listUsers))
+    mux.HandleFunc("POST /users", adapter.AdaptFunc(createUser))
     http.ListenAndServe(":8080", mux)
 }
 
@@ -115,7 +118,7 @@ rsvp.Config{
     TextTemplate: template.Must(template.ParseGlob("templates/text/*.gotmpl")),
 }
 
-func showUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
+func getUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
     w.DefaultTemplateName("user.gotmpl") // Must exist in HtmlTemplate and/or TextTemplate for formats to match
     return rsvp.Data(User{ID: 123}) // In content negotiation this will be offered as JSON, XML, HTML, and plain text.
 }
@@ -151,7 +154,7 @@ func (ul UserList) MarshalCsv(w *csv.Writer) error {
     return nil
 }
 
-func userList(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
+func listUsers(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
     return rsvp.Data(users) // In content negotiation this will be offered as JSON, XML, and CSV.
 }
 ```

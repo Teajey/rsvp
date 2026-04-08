@@ -5,22 +5,27 @@ import (
 	"net/http"
 )
 
-// AdaptHandlerFunc wraps a [HandlerFunc] as an [http.HandlerFunc] with the given config.
+// NewAdapter returns an rsvp middleware that adapts standard http.Handler to rsvp.Handler, using the provided config.
 //
 // This is the primary entrypoint to using rsvp.
-func AdaptHandlerFunc(cfg Config, next HandlerFunc) http.HandlerFunc {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		err := Write(rw, r, cfg, next)
+func NewAdapter(cfg Config) Adapter {
+	return Adapter{cfg}
+}
+
+type Adapter struct {
+	config Config
+}
+
+func (a Adapter) AdaptFunc(next func(w ResponseWriter, r *http.Request) Body) http.HandlerFunc {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		err := Write(rw, r, a.config, HandlerFunc(next))
 		if err != nil {
 			log.Printf("rsvp failed to write a response: %s", err)
 			return
 		}
-	}
+	})
 }
 
-// AdaptHandler wraps a [Handler] as an [http.Handler] with the given config.
-//
-// This is the primary entrypoint to using rsvp.
-func AdaptHandler(config Config, next Handler) http.Handler {
-	return AdaptHandlerFunc(config, next.ServeHTTP)
+func (a Adapter) Adapt(next Handler) http.Handler {
+	return a.AdaptFunc(next.ServeHTTP)
 }
