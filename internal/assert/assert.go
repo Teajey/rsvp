@@ -31,13 +31,17 @@ func FatalErr(t *testing.T, context string, err error) {
 }
 
 func FatalErrIs(t *testing.T, context string, err, target error) {
-	if !errors.Is(err, target) {
+	if err == nil {
+		t.Fatalf("%s: expected an error but got nil", context)
+	} else if !errors.Is(err, target) {
 		t.Fatalf("%s: encountered unexpected error: %s", context, err)
 	}
 }
 
 func FatalErrAs(t *testing.T, context string, err error, target any) {
-	if !errors.As(err, target) {
+	if err == nil {
+		t.Fatalf("%s: expected an error but got nil", context)
+	} else if !errors.As(err, target) {
 		t.Fatalf("%s: encountered unexpected error: %s", context, err)
 	}
 }
