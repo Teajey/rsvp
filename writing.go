@@ -89,7 +89,7 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 
 		wh.Set("Location", res.redirectLocation)
 
-		if res.isBlank() || accept == "" {
+		if res.isBlank() {
 			dev.Log("Redirect returning empty")
 			w.writer.WriteHeader(status)
 			return
@@ -105,24 +105,18 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 		return
 	}
 
-	if mediaType == "" {
-		if ext != "" {
-			a, ok := extToProposalMap[ext]
-			if !ok || !slices.Contains(supported, a) {
-				w.writer.WriteHeader(http.StatusNotFound)
-				return
-			}
+	if ext != "" {
+		a, ok := extToProposalMap[ext]
+		if !ok || !slices.Contains(supported, a) {
+			status = http.StatusNotFound
 		}
+	}
 
+	if mediaType == "" {
 		dev.Log("NotAcceptable. Ignoring Accept header and setting status code to 406...")
 		status = http.StatusNotAcceptable
 		mediaType = chooseMediaType(ext, supported, content.ParseAccept(""))
 		dev.Log("new mediaType %#v", mediaType)
-	}
-
-	if mediaType == "text/plain" && cfg.TextTemplate == nil && res.TemplateName != "" {
-		w.writer.WriteHeader(http.StatusNotFound)
-		return
 	}
 
 	if !res.isBlank() && contentType == "" {
@@ -139,9 +133,6 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 	err = render(res, mediaType, w.writer, cfg)
 	return
 }
-
-var ErrFailedToMatchTextTemplate = errors.New("TemplateName was set, but it failed to match within TextTemplate")
-var ErrFailedToMatchHtmlTemplate = errors.New("TemplateName was set, but it failed to match within HtmlTemplate")
 
 const templateErrorMessage = "rsvp stopped writing here because of a template error"
 
@@ -162,14 +153,14 @@ func render(res *Body, mediaType string, w io.Writer, cfg Config) error {
 				break
 			}
 
-			return ErrFailedToMatchHtmlTemplate
+			return errors.New("failed to match TemplateName within HtmlTemplate")
 		}
-		return fmt.Errorf("not using a template because either HtmlTemplate or TemplateName is not set")
+		return fmt.Errorf("failed to render HTML because either HtmlTemplate or TemplateName is not set")
 	case SupportedMediaTypePlaintext:
 		dev.Log("Rendering plain text...")
 
 		if res.TemplateName != "" && cfg.TextTemplate != nil {
-			dev.Log("Template name is set, so expecting a template...")
+			dev.Log("Template name is set, so looking for a template...")
 
 			if tm := cfg.TextTemplate.Lookup(res.TemplateName); tm != nil {
 				dev.Log("Executing TextTemplate...")
@@ -180,10 +171,8 @@ func render(res *Body, mediaType string, w io.Writer, cfg Config) error {
 				}
 				break
 			}
-
-			return ErrFailedToMatchTextTemplate
 		}
-		dev.Log("Not using a template because either TextTemplate or TemplateName is not set...")
+		dev.Log("Not using a template because either TemplateName is not set, or it did not find a match...")
 
 		if data, ok := res.Data.(string); ok {
 			dev.Log("Can write data directly because it is a string...")

@@ -109,7 +109,7 @@ World!`
 	assert.Eq(t, "body contents", "\"Hello,\\nWorld!\""+"\n", s)
 }
 
-func TestUnsupportedExtHasBlank404(t *testing.T) {
+func TestUnsupportedExt(t *testing.T) {
 	body := `Hello,
 World!`
 	res := rsvp.Body{Data: body}
@@ -126,10 +126,10 @@ World!`
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", 404, statusCode)
 
-	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "", s)
+	assert.Eq(t, "body contents", "\"Hello,\\nWorld!\"\n", s)
 }
 
 func TestListBody(t *testing.T) {
@@ -267,7 +267,7 @@ func TestTextTemplateWithoutName(t *testing.T) {
 	assert.Eq(t, "body contents", "Hello, World!", s)
 }
 
-func TestHtmlTemplateMiss(t *testing.T) {
+func TestHtmlTemplateMissAccept(t *testing.T) {
 	body := "Hello <input> World!"
 	res := rsvp.Body{Data: body, TemplateName: "tn"}
 	req := httptest.NewRequest("GET", "/", nil)
@@ -278,11 +278,66 @@ func TestHtmlTemplateMiss(t *testing.T) {
 	cfg.HtmlTemplate = html.Must(html.New("tm").Parse(`<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>`))
 
 	err := makeHandler(res, cfg)(rec, req)
-	assert.FatalErrIs(t, "handler", err, rsvp.ErrFailedToMatchHtmlTemplate)
+	assert.FatalErr(t, "handler", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", "Hello <input> World!", s)
 }
 
-func TestTextTemplateMiss(t *testing.T) {
-	body := "Hello, World!"
+func TestHtmlTemplateMissExt(t *testing.T) {
+	body := "Hello <input> World!"
+	res := rsvp.Body{Data: body, TemplateName: "tn"}
+	req := httptest.NewRequest("GET", "/message.html", nil)
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.Config{}
+	cfg.HtmlTemplate = html.Must(html.New("tm").Parse(`<div>{{if .}}{{.}}{{else}}Nothin!{{end}}</div>`))
+
+	err := makeHandler(res, cfg)(rec, req)
+	assert.FatalErr(t, "handler", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 404, statusCode)
+
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", body, s)
+}
+
+func TestTextTemplateMissAccept(t *testing.T) {
+	body := map[string]string{"msg": "Hello, World!"}
+	res := rsvp.Body{Data: body, TemplateName: "tn"}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "text/plain")
+	rec := httptest.NewRecorder()
+
+	cfg := rsvp.Config{}
+	cfg.TextTemplate = text.New("")
+	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{with .msg}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
+
+	err := makeHandler(res, cfg)(rec, req)
+	assert.FatalErr(t, "handler", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", `{"msg":"Hello, World!"}`+"\n", s)
+}
+
+func TestTextTemplateMissExt(t *testing.T) {
+	body := map[string]string{"msg": "Hello, World!"}
 	res := rsvp.Body{Data: body, TemplateName: "tn"}
 	req := httptest.NewRequest("GET", "/message.txt", nil)
 	rec := httptest.NewRecorder()
@@ -292,7 +347,16 @@ func TestTextTemplateMiss(t *testing.T) {
 	cfg.TextTemplate = text.Must(cfg.TextTemplate.Parse(`{{define "tm"}}{{if .}}Message: {{.}}{{else}}Nothin!{{end}}{{end}}`))
 
 	err := makeHandler(res, cfg)(rec, req)
-	assert.FatalErrIs(t, "handler", err, rsvp.ErrFailedToMatchTextTemplate)
+	assert.FatalErr(t, "handler", err)
+
+	resp := rec.Result()
+	statusCode := resp.StatusCode
+	assert.Eq(t, "Status code", 404, statusCode)
+
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
+
+	s := rec.Body.String()
+	assert.Eq(t, "body contents", `{"msg":"Hello, World!"}`+"\n", s)
 }
 
 func TestAttemptToRenderNonTextAsText(t *testing.T) {
@@ -309,10 +373,10 @@ func TestAttemptToRenderNonTextAsText(t *testing.T) {
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", 404, statusCode)
 
-	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "", s)
+	assert.Eq(t, "body contents", `{"I'm":"a map"}`+"\n", s)
 }
 
 func TestRss(t *testing.T) {
@@ -511,7 +575,7 @@ func TestSeeOtherCanRender(t *testing.T) {
 	assert.Eq(t, "body contents", res.Data.(string), s)
 }
 
-func TestSeeOtherDoesNotRenderWithoutAccept(t *testing.T) {
+func TestSeeOtherWithData(t *testing.T) {
 	res := rsvp.Body{Data: "See other"}.StatusSeeOther("/")
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
@@ -522,10 +586,10 @@ func TestSeeOtherDoesNotRenderWithoutAccept(t *testing.T) {
 	resp := rec.Result()
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusSeeOther, statusCode)
-	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "", s)
+	assert.Eq(t, "body contents", "See other", s)
 }
 
 func TestFoundCanRender(t *testing.T) {
@@ -546,7 +610,7 @@ func TestFoundCanRender(t *testing.T) {
 	assert.Eq(t, "body contents", res.Data.(string), s)
 }
 
-func TestFoundDoesNotRenderHtmlWithoutAccept(t *testing.T) {
+func TestFoundWithData(t *testing.T) {
 	res := rsvp.Body{Data: "Found"}.StatusFound("/")
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
@@ -557,15 +621,14 @@ func TestFoundDoesNotRenderHtmlWithoutAccept(t *testing.T) {
 	resp := rec.Result()
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusFound, statusCode)
-	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "", s)
+	assert.Eq(t, "body contents", "Found", s)
 }
 
-func TestPermanentRedirectDoesNotRenderWithoutAccept(t *testing.T) {
+func TestPermanentRedirectWithData(t *testing.T) {
 	res := rsvp.Body{Data: "Permanent redirect"}.StatusPermanentRedirect("/")
-	res.Data = "POST successful"
 	req := httptest.NewRequest("POST", "/", nil)
 	rec := httptest.NewRecorder()
 
@@ -575,10 +638,10 @@ func TestPermanentRedirectDoesNotRenderWithoutAccept(t *testing.T) {
 	resp := rec.Result()
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusPermanentRedirect, statusCode)
-	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	assert.Eq(t, "Location", "/", resp.Header.Get("Location"))
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "", s)
+	assert.Eq(t, "body contents", "Permanent redirect", s)
 }
 
 func TestMovedPermanentlyDoesRender(t *testing.T) {
@@ -649,12 +712,12 @@ func TestExplicitTextRequestWithoutTextTemplate(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", http.StatusNotFound, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
-	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "", s)
+	assert.Eq(t, "body contents", "Hello <input> World!", s)
 }
 
 func TestExplicitHtmlRequestWithoutHtmlTemplate(t *testing.T) {
@@ -673,10 +736,10 @@ func TestExplicitHtmlRequestWithoutHtmlTemplate(t *testing.T) {
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Status code", http.StatusNotFound, statusCode)
 
-	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
+	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 
 	s := rec.Body.String()
-	assert.Eq(t, "body contents", "", s)
+	assert.Eq(t, "body contents", `Message: Hello <input> World!`, s)
 }
 
 func TestNestedFile(t *testing.T) {

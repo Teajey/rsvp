@@ -13,6 +13,15 @@ import (
 	"github.com/Teajey/rsvp/internal/assert"
 )
 
+var htmlTemplate *html.Template
+var textTemplate *text.Template
+
+func TestMain(m *testing.M) {
+	htmlTemplate = html.Must(html.New("").Parse(`{{ define "tm" }}TEMPLATE{{end}}`))
+	textTemplate = text.Must(text.New("").Parse(`{{ define "tm" }}TEMPLATE{{end}}`))
+	m.Run()
+}
+
 func TestNilResponse(t *testing.T) {
 	cfg := rsvp.Config{}
 	resp := rsvp.Data(nil)
@@ -151,7 +160,7 @@ func TestCsvResponse(t *testing.T) {
 
 func TestStructResponseWithHtmlTemplate(t *testing.T) {
 	cfg := rsvp.Config{
-		HtmlTemplate: html.New(""),
+		HtmlTemplate: htmlTemplate,
 	}
 	resp := rsvp.Body{Data: struct{}{}, TemplateName: "tm"}
 	actual := slices.Collect(resp.MediaTypes(cfg))
@@ -168,7 +177,7 @@ func TestStructResponseWithHtmlTemplate(t *testing.T) {
 
 func TestStructWithoutTemplateNameResponseWithHtmlTemplate(t *testing.T) {
 	cfg := rsvp.Config{
-		HtmlTemplate: html.New(""),
+		HtmlTemplate: htmlTemplate,
 	}
 	resp := rsvp.Body{Data: struct{}{}, TemplateName: ""}
 	actual := slices.Collect(resp.MediaTypes(cfg))
@@ -184,7 +193,7 @@ func TestStructWithoutTemplateNameResponseWithHtmlTemplate(t *testing.T) {
 
 func TestCsvResponseWithHtmlTemplate(t *testing.T) {
 	cfg := rsvp.Config{
-		HtmlTemplate: html.New(""),
+		HtmlTemplate: htmlTemplate,
 	}
 	resp := rsvp.Body{Data: myCsv{}, TemplateName: "tm"}
 	actual := slices.Collect(resp.MediaTypes(cfg))
@@ -202,7 +211,7 @@ func TestCsvResponseWithHtmlTemplate(t *testing.T) {
 
 func TestCsvResponseWithTextTemplate(t *testing.T) {
 	cfg := rsvp.Config{
-		TextTemplate: text.New(""),
+		TextTemplate: textTemplate,
 	}
 	resp := rsvp.Body{Data: myCsv{}, TemplateName: "tm"}
 	actual := slices.Collect(resp.MediaTypes(cfg))
@@ -220,7 +229,7 @@ func TestCsvResponseWithTextTemplate(t *testing.T) {
 
 func TestStructResponseWithTextTemplate(t *testing.T) {
 	cfg := rsvp.Config{
-		TextTemplate: text.New(""),
+		TextTemplate: textTemplate,
 	}
 	resp := rsvp.Body{Data: struct{}{}, TemplateName: "tm"}
 	actual := slices.Collect(resp.MediaTypes(cfg))
@@ -237,7 +246,7 @@ func TestStructResponseWithTextTemplate(t *testing.T) {
 
 func TestStructWithoutTemplateNameResponseWithTextTemplate(t *testing.T) {
 	cfg := rsvp.Config{
-		TextTemplate: text.New(""),
+		TextTemplate: textTemplate,
 	}
 	resp := rsvp.Body{Data: struct{}{}, TemplateName: ""}
 	actual := slices.Collect(resp.MediaTypes(cfg))
@@ -253,8 +262,8 @@ func TestStructWithoutTemplateNameResponseWithTextTemplate(t *testing.T) {
 
 func TestStructResponseWithTextAndHtmlTemplates(t *testing.T) {
 	cfg := rsvp.Config{
-		HtmlTemplate: html.New(""),
-		TextTemplate: text.New(""),
+		HtmlTemplate: htmlTemplate,
+		TextTemplate: textTemplate,
 	}
 	resp := rsvp.Body{Data: struct{}{}, TemplateName: "tm"}
 	actual := slices.Collect(resp.MediaTypes(cfg))
@@ -272,8 +281,8 @@ func TestStructResponseWithTextAndHtmlTemplates(t *testing.T) {
 
 func TestStringResponseWithTextAndHtmlTemplates(t *testing.T) {
 	cfg := rsvp.Config{
-		HtmlTemplate: html.New(""),
-		TextTemplate: text.New(""),
+		HtmlTemplate: htmlTemplate,
+		TextTemplate: textTemplate,
 	}
 	resp := rsvp.Body{Data: "Hello", TemplateName: "tm"}
 	actual := slices.Collect(resp.MediaTypes(cfg))
@@ -292,8 +301,8 @@ func TestStringResponseWithTextAndHtmlTemplates(t *testing.T) {
 
 func TestCsvResponseWithTextAndHtmlTemplates(t *testing.T) {
 	cfg := rsvp.Config{
-		HtmlTemplate: html.New(""),
-		TextTemplate: text.New(""),
+		HtmlTemplate: htmlTemplate,
+		TextTemplate: textTemplate,
 	}
 	resp := rsvp.Body{Data: myCsv{}, TemplateName: "tm"}
 	actual := slices.Collect(resp.MediaTypes(cfg))
@@ -312,7 +321,7 @@ func TestCsvResponseWithTextAndHtmlTemplates(t *testing.T) {
 
 func TestBytesResponseWithHtmlTemplate(t *testing.T) {
 	cfg := rsvp.Config{
-		HtmlTemplate: html.New(""),
+		HtmlTemplate: htmlTemplate,
 	}
 	resp := rsvp.Body{Data: []byte("Hello"), TemplateName: "tm"}
 	actual := slices.Collect(resp.MediaTypes(cfg))
@@ -330,7 +339,7 @@ func TestBytesResponseWithHtmlTemplate(t *testing.T) {
 
 func TestStringResponseWithHtmlTemplate(t *testing.T) {
 	cfg := rsvp.Config{
-		HtmlTemplate: html.New(""),
+		HtmlTemplate: htmlTemplate,
 	}
 	resp := rsvp.Body{Data: "Hello", TemplateName: "tm"}
 	actual := slices.Collect(resp.MediaTypes(cfg))
