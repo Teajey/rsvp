@@ -107,11 +107,7 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) st
 			if slices.Contains(supported, a) {
 				dev.Log("Setting %#v as sole supported type", a)
 				supported = []string{a}
-			} else {
-				supported = []string{}
 			}
-		} else {
-			supported = []string{}
 		}
 	}
 
@@ -171,13 +167,13 @@ func (res *Body) MediaTypes(cfg Config) iter.Seq[string] {
 		}
 
 		if res.TemplateName != "" {
-			if cfg.HtmlTemplate != nil {
+			if cfg.HtmlTemplate != nil && cfg.HtmlTemplate.Lookup(res.TemplateName) != nil {
 				if !yield(SupportedMediaTypeHtml) {
 					return
 				}
 			}
 
-			if cfg.TextTemplate != nil {
+			if cfg.TextTemplate != nil && cfg.TextTemplate.Lookup(res.TemplateName) != nil {
 				if !yield(SupportedMediaTypePlaintext) {
 					return
 				}
