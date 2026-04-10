@@ -60,7 +60,7 @@ rsvp will attempt to provide Data in a supported media type that is requested vi
 
 ### Extension matching on GET requests
 
-- `/users` → Returns default media type (determined by the value of Body)
+- `/users` → Returns default media type (determined by the value of Body and the Accept header)
 - `/users.json` → Forces `application/json`
 - `/users.xml` → Forces `application/xml`
 - `/users.csv` → Forces `text/csv`
@@ -75,8 +75,8 @@ rsvp will attempt to provide Data in a supported media type that is requested vi
 > mux.Handle("/users.csv", listUsers)
 > ```
 
-> [!WARN]
-> For dynamic file-matching handlers like this it will work automatically, however you might want to remember to strip the extension from the filename:
+> [!WARNING]
+> For dynamic file-matching handlers like this it will work automatically, however, depending on your use-case, you might want to strip the extension from the filename in your handler:
 >
 > ```go
 > mux.Handle("/users/{filename}", getUser)
@@ -125,9 +125,11 @@ func getUser(w rsvp.ResponseWriter, r *http.Request) rsvp.Body {
 ```
 
 > [!IMPORTANT]
-> nil Data renders as JSON "null\n", not an empty response.
+> `rsvp.Data(nil)` renders as JSON `null\n`, not an empty response.
 >
-> Use `rsvp.Data("")` for a blank text/plain response body, or `rsvp.Blank()` for a blank response with no Content-Type.
+> `rsvp.Data("")` renders as `""` when the user requests JSON.
+> 
+> Use `rsvp.Blank()` for a blank response with no Content-Type.
 
 ## Examples
 
