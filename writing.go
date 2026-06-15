@@ -83,25 +83,8 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 	supported := res.determineSupported(cfg)
 	mediaType := res.determineMediaType(ext, accept, supported)
 
-	if 300 <= res.statusCode && res.statusCode < 400 {
-		dev.Log("Redirect")
-
+	if res.redirectLocation != "" {
 		wh.Set("Location", res.redirectLocation)
-
-		if res.isBlank() {
-			dev.Log("Redirect returning empty")
-			w.writer.WriteHeader(status)
-			return
-		}
-
-		supported := res.determineSupported(cfg)
-		mediaType := res.determineMediaType(ext, accept, supported)
-
-		res.determineContentType(mediaType, wh)
-
-		w.writer.WriteHeader(status)
-		err = render(res, mediaType, w.writer, cfg)
-		return
 	}
 
 	if mediaType == "" {
