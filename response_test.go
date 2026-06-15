@@ -37,7 +37,7 @@ World!`
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	assert.Eq(t, "Vary header", "Accept", resp.Header.Get("Vary"))
 	s := rec.Body.String()
@@ -58,7 +58,7 @@ World!`
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 
@@ -79,7 +79,7 @@ World!`
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 
@@ -101,7 +101,7 @@ World!`
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 
@@ -124,7 +124,7 @@ World!`
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 404, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 
@@ -144,7 +144,7 @@ func TestListBody(t *testing.T) {
 	resp := rec.Result()
 	statusCode := resp.StatusCode
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", `["hello","world","123"]`+"\n", s)
 }
@@ -161,7 +161,7 @@ func TestBytesBody(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "application/octet-stream", resp.Header.Get("Content-Type"))
 
@@ -187,7 +187,7 @@ func TestHtmlTemplate(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
 
@@ -210,7 +210,7 @@ func TestHtmlTemplateErrorWritesToResponseBody(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
 
@@ -236,7 +236,7 @@ func TestTextTemplateWithName(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 
@@ -259,7 +259,7 @@ func TestTextTemplateWithoutName(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 
@@ -282,7 +282,7 @@ func TestHtmlTemplateMissAccept(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 
@@ -304,7 +304,7 @@ func TestHtmlTemplateMissExt(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 404, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 
@@ -328,7 +328,7 @@ func TestTextTemplateMissAccept(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 
@@ -351,7 +351,7 @@ func TestTextTemplateMissExt(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 404, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 
@@ -371,7 +371,7 @@ func TestAttemptToRenderNonTextAsText(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 404, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 
@@ -421,7 +421,7 @@ func TestRss(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "application/rss+xml", resp.Header.Get("Content-Type"))
 
@@ -443,7 +443,7 @@ func TestNotFound(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 404, statusCode)
+	assert.Eq(t, "Status code", http.StatusNotFound, statusCode)
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "404 Not Found", s)
@@ -461,7 +461,7 @@ func TestBlankOk(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
@@ -497,7 +497,7 @@ func TestEmptyBytesBody(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/octet-stream", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
@@ -515,7 +515,7 @@ func TestEmptyStringBody(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
@@ -533,7 +533,7 @@ func TestNilBody(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", `null`+"\n", s)
@@ -551,7 +551,7 @@ func TestNilBodyAcceptText(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", `null`+"\n", s)
@@ -662,7 +662,7 @@ func TestMovedPermanentlyDoesRender(t *testing.T) {
 	assert.Eq(t, "body contents", res.Data.(string), s)
 }
 
-func TestNotAcceptableDoesRenderDefault(t *testing.T) {
+func TestUnsupportedMediaTypeDoesRenderDefault(t *testing.T) {
 	res := rsvp.Body{Data: "Hello!"}
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "application/vnd.foobar")
@@ -673,7 +673,7 @@ func TestNotAcceptableDoesRenderDefault(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", res.Data.(string), s)
@@ -692,7 +692,7 @@ func TestNotFoundJson(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 404, statusCode)
+	assert.Eq(t, "Status code", http.StatusNotFound, statusCode)
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", `"404 Not Found"`+"\n", s)
@@ -734,7 +734,7 @@ func TestExplicitHtmlRequestWithoutHtmlTemplate(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", http.StatusNotFound, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 
@@ -754,7 +754,7 @@ World!`
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", body, s)
@@ -771,7 +771,7 @@ func TestPutWithOkResponse(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "", resp.Header.Get("Content-Type"))
 	s := rec.Body.String()
 	assert.Eq(t, "body contents", "", s)
@@ -795,7 +795,7 @@ func TestRequestUnknownFormat(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 
@@ -820,7 +820,7 @@ func TestComplexDataStructuresAreJsonByDefault(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 
@@ -846,7 +846,7 @@ func TestFirefoxAcceptHeader(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 
 	assert.Eq(t, "Content type", "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
 
@@ -899,7 +899,7 @@ func TestRequestJsonEmptyString(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", `""`+"\n", body)
@@ -916,7 +916,7 @@ func TestRequestJsonNull(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", "null\n", body)
@@ -933,7 +933,7 @@ func TestRespondJsonEmptyString(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", `""`+"\n", body)
@@ -950,7 +950,7 @@ func TestRespondJsonNull(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", "null\n", body)
@@ -967,7 +967,7 @@ func TestRequestXmlEmptyString(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/xml", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", "<string></string>", body)
@@ -984,7 +984,7 @@ func TestRequestXmlNull(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/xml", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", "", body)
@@ -1001,7 +1001,7 @@ func TestRespondXmlEmptyString(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/xml", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", "<string></string>", body)
@@ -1018,7 +1018,7 @@ func TestRespondXmlNull(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", 200, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/xml", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", "", body)
@@ -1036,7 +1036,7 @@ func TestRequestForXmlButServingJson(t *testing.T) {
 
 	resp := rec.Result()
 	statusCode := resp.StatusCode
-	assert.Eq(t, "Status code", http.StatusNotAcceptable, statusCode)
+	assert.Eq(t, "Status code", http.StatusOK, statusCode)
 	assert.Eq(t, "Content type", "application/json", resp.Header.Get("Content-Type"))
 	body := rec.Body.String()
 	assert.Eq(t, "body contents", "null\n", body)

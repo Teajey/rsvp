@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"slices"
 
 	"github.com/Teajey/rsvp/internal/content"
 	"github.com/Teajey/rsvp/internal/dev"
@@ -105,16 +104,8 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 		return
 	}
 
-	if ext != "" {
-		a, ok := extToProposalMap[ext]
-		if !ok || !slices.Contains(supported, a) {
-			status = http.StatusNotFound
-		}
-	}
-
 	if mediaType == "" {
-		dev.Log("NotAcceptable. Ignoring Accept header and setting status code to 406...")
-		status = http.StatusNotAcceptable
+		dev.Log("No supported media type found. Ignoring Accept header...")
 		mediaType = chooseMediaType(ext, supported, content.ParseAccept(""))
 		dev.Log("new mediaType %#v", mediaType)
 	}
