@@ -57,6 +57,8 @@ func (w *responseWriter) Header() http.Header {
 func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err error) {
 	w.writer.Header().Add("Vary", "Accept")
 
+	logger := cfg.getLogger()
+
 	dev.Log("config: %#v", cfg)
 	status := cmp.Or(res.statusCode, 200)
 
@@ -104,7 +106,19 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 	}
 
 	w.writer.WriteHeader(status)
-	err = render(res, mediaType, w.writer, cfg)
+	out := io.Writer(w.writer)
+	if res.Streaming {
+		if f, ok := w.writer.(http.Flusher); ok {
+			out = &flushWriter{
+				w:         w.writer,
+				f:         f,
+				threshold: res.StreamingThreshold,
+			}
+		} else {
+			logger.Warn("Body.Stream() requested but underlying ResponseWriter is not http.Flusher; ignoring")
+		}
+	}
+	err = render(res, mediaType, out, cfg)
 	return
 }
 

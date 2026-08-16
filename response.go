@@ -34,6 +34,18 @@ type Body struct {
 	TemplateName string
 	// TODO: Perhaps a warning should be issued to stderr if this fails to match on both templates?
 
+	// Streaming indicates that this response is intended to be streamed. When true, w.Flush() will be called with every w.Write(), provided that w is an http.Flusher.
+	//
+	// Set Body.StreamingThreshold to require a certain amount of bytes in the buffer before flushing occurs.
+	//
+	// Use Body.StreamEager() as a more convient way to set this flag.
+	Streaming bool
+
+	// StreamingThreshold sets the required number of bytes buffered before flushing to the client. Does nothing if Body.Streaming = false.
+	//
+	// Use Body.StreamThreshold() as a more convient way to set this flag.
+	StreamingThreshold int
+
 	statusCode int
 
 	predeterminedMediaType string
