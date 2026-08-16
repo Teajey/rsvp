@@ -91,6 +91,7 @@ type Config struct {
 	JsonIndent string
 	XmlPrefix string
 	XmlIndent string
+	Logger *slog.Logger
 }
 
 type Csv interface {
