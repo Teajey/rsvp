@@ -125,10 +125,10 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) st
 	return ""
 }
 
-// MediaTypes returns the sequence of media types (e.g. text/plain) in the order that this [Body] will propose.
+// MediaTypes returns the sequence of media types (e.g. text/plain) in the order that this [Body] proposes.
 //
 // The order generally follows this pattern:
-//  1. Type-specific (Html wrapper, string, bytes)
+//  1. Type-specific (string, bytes)
 //  2. Generic structured (JSON, XML)
 //  3. Interface implementations (CSV)
 //  4. Template-based (HTML template, text template)
