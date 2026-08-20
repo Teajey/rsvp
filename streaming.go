@@ -28,7 +28,7 @@ type flushWriter struct {
 func (fw *flushWriter) Write(p []byte) (int, error) {
 	n, err := fw.w.Write(p)
 	fw.buffered += n
-	if err != nil && fw.buffered >= fw.threshold {
+	if err == nil && fw.buffered >= fw.threshold {
 		fw.f.Flush()
 		fw.buffered = 0
 	}
