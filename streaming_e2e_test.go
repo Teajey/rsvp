@@ -13,9 +13,7 @@ import (
 )
 
 // TestStreamingDeliversChunksProgressivelyOverHTTP proves streaming actually
-// streams: it spins up a real net/http server (httptest.NewRecorder alone
-// can't show this, since it's in-memory and has no notion of when bytes hit
-// the wire) and asserts the client receives each chunk roughly chunkDelay
+// streams: it asserts the client receives each chunk roughly chunkDelay
 // apart, rather than getting the whole body in one burst once the handler
 // finishes.
 func TestStreamingDeliversChunksProgressivelyOverHTTP(t *testing.T) {
@@ -24,8 +22,7 @@ func TestStreamingDeliversChunksProgressivelyOverHTTP(t *testing.T) {
 
 	cfg := rsvp.Config{}
 	cfg.TextTemplate = text.New("chunks").Funcs(text.FuncMap{
-		// Blocks execution for chunkDelay between each templated value,
-		// standing in for slow/paginated work a real handler might do.
+		// stand-in for slow/paginated work a real handler might do.
 		"sleep": func() string {
 			time.Sleep(chunkDelay)
 			return ""

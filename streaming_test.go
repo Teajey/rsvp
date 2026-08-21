@@ -28,9 +28,7 @@ func (w erroringWriter) Write(p []byte) (int, error) {
 }
 
 // A successful write that reaches the threshold should trigger exactly
-// one Flush. This is the important case: as written, flushWriter.Write
-// only flushes when err != nil, so on the normal (no-error) path this
-// currently never fires.
+// one Flush.
 func TestFlushWriterFlushesOnSuccessfulWriteAtThreshold(t *testing.T) {
 	var buf bytes.Buffer
 	flusher := &countingFlusher{}

@@ -6,12 +6,16 @@ import (
 )
 
 // StreamEager sets r.Streaming = true
+//
+// See [Body.Streaming] for more info
 func (r Body) StreamEager() Body {
 	r.Streaming = true
 	return r
 }
 
 // StreamEager sets r.Streaming = true and r.StreamingThreshold = threshold
+//
+// See [Body.StreamingThreshold] for more info
 func (r Body) StreamThreshold(threshold int) Body {
 	r.Streaming = true
 	r.StreamingThreshold = threshold
