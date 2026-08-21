@@ -107,13 +107,17 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 
 	w.writer.WriteHeader(status)
 	out := io.Writer(w.writer)
+	var fw *flushWriter
 	if res.Streaming {
 		if f, ok := w.writer.(http.Flusher); ok {
-			out = &flushWriter{
+			fw = &flushWriter{
 				w:         w.writer,
 				f:         f,
 				threshold: res.StreamingThreshold,
+				interval:  res.StreamingInterval,
 			}
+			out = fw
+			defer fw.close()
 		} else {
 			logger.Warn("Body.Stream() requested but underlying ResponseWriter is not http.Flusher; ignoring")
 		}

@@ -32,6 +32,7 @@ type Body struct {
 	TemplateName string
 	Streaming bool
 	StreamingThreshold int
+	StreamingInterval time.Duration
 
 	// Has unexported fields.
 }
@@ -87,6 +88,8 @@ func (r Body) StatusUnauthorized() Body
 func (r Body) StatusUnprocessableEntity() Body
 
 func (r Body) StreamEager() Body
+
+func (r Body) StreamInterval(interval time.Duration) Body
 
 func (r Body) StreamThreshold(threshold int) Body
 

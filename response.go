@@ -16,6 +16,8 @@
 // as REST and progressive enhancement.
 package rsvp
 
+import "time"
+
 // Body represents the content body of an HTTP response.
 //
 // By default, it represents a 200 OK response. The Body.Status* methods (e.g. [Body.StatusFound]) may be used to set a non-200 status.
@@ -45,6 +47,8 @@ type Body struct {
 	//
 	// Body.StreamThreshold() may be a more convient way to set this flag.
 	StreamingThreshold int
+
+	StreamingInterval time.Duration
 
 	statusCode int
 
