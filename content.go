@@ -132,7 +132,7 @@ func chooseMediaType(ext string, supported []string, accept iter.Seq[string]) st
 //  2. Generic structured (JSON, XML)
 //  3. Interface implementations (CSV)
 //  4. Template-based (HTML template, text template)
-func (res *Body) MediaTypes(cfg Config) iter.Seq[string] {
+func (res Body) MediaTypes(cfg Config) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		if res.predeterminedMediaType != "" {
 			dev.Log("Overriding media-types with %s", res.predeterminedMediaType)

@@ -40,7 +40,7 @@ func Blank() Body
 
 func Data(data any) Body
 
-func (res *Body) MediaTypes(cfg Config) iter.Seq[string]
+func (res Body) MediaTypes(cfg Config) iter.Seq[string]
 
 func (r Body) StatusAccepted() Body
 
