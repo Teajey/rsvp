@@ -40,14 +40,17 @@ type Body struct {
 	//
 	// Set Body.StreamingThreshold to require a certain amount of bytes in the buffer before w.Flush() is called.
 	//
-	// Body.StreamEager() may be a more convient way to set this flag.
+	// Depending on your use case, [Body.StreamEager] may be a more convient way to set this flag.
 	Streaming bool
 
 	// StreamingThreshold sets the required number of bytes buffered before flushing to the client. Does nothing if Body.Streaming = false.
 	//
-	// Body.StreamThreshold() may be a more convient way to set this flag.
+	// Depending on your use case, [Body.StreamThreshold] may be a more convient way to set this flag.
 	StreamingThreshold int
 
+	// StreamingInterval sets a duration that the writer will wait between flushes, provided there are bytes to flush.
+	//
+	// Depending on your use case, [Body.StreamInterval] may be a more convient way to set this flag.
 	StreamingInterval time.Duration
 
 	statusCode int

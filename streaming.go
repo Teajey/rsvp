@@ -24,6 +24,9 @@ func (r Body) StreamThreshold(threshold int) Body {
 	return r
 }
 
+// StreamInterval sets r.Streaming = true and r.StreamInterval = interval
+//
+// See [Body.StreamingInterval] for more info
 func (r Body) StreamInterval(interval time.Duration) Body {
 	r.Streaming = true
 	r.StreamingInterval = interval
