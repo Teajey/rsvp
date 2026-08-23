@@ -119,7 +119,7 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 			out = fw
 			defer fw.close()
 		} else {
-			logger.Warn("Body.Stream() requested but underlying ResponseWriter is not http.Flusher; ignoring")
+			logger.Warn("Streaming requested but the underlying http.ResponseWriter is not http.Flusher; ignoring")
 		}
 	}
 	err = render(res, mediaType, out, cfg)

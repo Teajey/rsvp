@@ -15,7 +15,7 @@ func (r Body) StreamEager() Body {
 	return r
 }
 
-// StreamEager sets r.Streaming = true and r.StreamingThreshold = threshold
+// StreamThreshold sets r.Streaming = true and r.StreamingThreshold = threshold
 //
 // See [Body.StreamingThreshold] for more info
 func (r Body) StreamThreshold(threshold int) Body {

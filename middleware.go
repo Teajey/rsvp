@@ -20,7 +20,7 @@ func (a Adapter) AdaptFunc(next func(w ResponseWriter, r *http.Request) Body) ht
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		err := Write(rw, r, a.config, HandlerFunc(next))
 		if err != nil {
-			logger.Error("rsvp failed to write a response: %s", "error", err)
+			logger.Error("rsvp failed to write a response", "error", err)
 			return
 		}
 	})
