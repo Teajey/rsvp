@@ -57,12 +57,12 @@ func TestFlushWriterNoFlushBelowThreshold(t *testing.T) {
 	assert.Eq(t, "buffered", 8, fw.buffered)
 }
 
-// StreamEager() leaves StreamingThreshold at its zero value, so every
+// StreamEager() sets StreamingThreshold = 1, where every
 // successful write should flush immediately.
-func TestFlushWriterZeroThresholdFlushesEveryWrite(t *testing.T) {
+func TestFlushWriterThresholdOneFlushesEveryWrite(t *testing.T) {
 	var buf bytes.Buffer
 	flusher := &countingFlusher{}
-	fw := &flushWriter{w: &buf, f: flusher} // threshold defaults to 0
+	fw := &flushWriter{w: &buf, f: flusher, threshold: 1}
 
 	for i, chunk := range []string{"a", "b", "c"} {
 		_, err := fw.Write([]byte(chunk))
