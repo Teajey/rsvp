@@ -32,6 +32,7 @@ type Body struct {
 	TemplateName string
 	StreamingThreshold int
 	StreamingInterval time.Duration
+	StreamingWriteCount int
 
 	// Has unexported fields.
 }
@@ -91,6 +92,8 @@ func (r Body) StreamEager() Body
 func (r Body) StreamInterval(interval time.Duration) Body
 
 func (r Body) StreamThreshold(threshold int) Body
+
+func (r Body) StreamWriteCount(count int) Body
 
 type Config struct {
 	HtmlTemplate *html.Template

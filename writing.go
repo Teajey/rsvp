@@ -111,10 +111,11 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 	if res.isStreaming() {
 		if f, ok := w.writer.(http.Flusher); ok {
 			fw = &flushWriter{
-				w:         w.writer,
-				f:         f,
-				threshold: res.StreamingThreshold,
-				interval:  res.StreamingInterval,
+				w:               w.writer,
+				f:               f,
+				threshold:       res.StreamingThreshold,
+				interval:        res.StreamingInterval,
+				writeCountLimit: res.StreamingWriteCount,
 			}
 			out = fw
 			defer fw.close()

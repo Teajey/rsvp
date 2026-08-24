@@ -46,6 +46,14 @@ type Body struct {
 	// Depending on your use case, [Body.StreamInterval] may be a more convient way to set this flag.
 	StreamingInterval time.Duration
 
+	// StreamingWriteCount sets the number of Write() calls required before flushing
+	// to the client. Useful for line/record-oriented formats (CSV rows, JSONL lines)
+	// where each record is emitted via a single Write call, so flushing by record
+	// count is more meaningful than flushing by byte count.
+	//
+	// Depending on your use case, [Body.StreamWriteCount] may be a more convenient way to set this flag.
+	StreamingWriteCount int
+
 	statusCode int
 
 	predeterminedMediaType string

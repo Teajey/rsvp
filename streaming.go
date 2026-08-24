@@ -31,19 +31,29 @@ func (r Body) StreamInterval(interval time.Duration) Body {
 	return r
 }
 
+// StreamWriteCount sets r.StreamingWriteCount = count
+//
+// See [Body.StreamingWriteCount] for more info
+func (r Body) StreamWriteCount(count int) Body {
+	r.StreamingWriteCount = count
+	return r
+}
+
 func (r Body) isStreaming() bool {
-	return r.StreamingThreshold > 0 || r.StreamingInterval > 0
+	return r.StreamingThreshold > 0 || r.StreamingInterval > 0 || r.StreamingWriteCount > 0
 }
 
 type flushWriter struct {
-	mu        sync.Mutex
-	w         io.Writer
-	f         http.Flusher
-	threshold int
-	interval  time.Duration
-	buffered  int
-	timer     *time.Timer
-	closed    bool
+	mu              sync.Mutex
+	w               io.Writer
+	f               http.Flusher
+	threshold       int
+	writeCountLimit int
+	interval        time.Duration
+	buffered        int
+	writes          int
+	timer           *time.Timer
+	closed          bool
 }
 
 func (fw *flushWriter) Write(p []byte) (int, error) {
@@ -51,12 +61,18 @@ func (fw *flushWriter) Write(p []byte) (int, error) {
 	defer fw.mu.Unlock()
 	n, err := fw.w.Write(p)
 	fw.buffered += n
+	if n > 0 {
+		fw.writes++
+	}
 	if err != nil {
 		return n, err
 	}
-	if fw.threshold > 0 && fw.buffered >= fw.threshold {
+	switch {
+	case fw.threshold > 0 && fw.buffered >= fw.threshold:
 		fw.flushLocked()
-	} else if fw.buffered > 0 {
+	case fw.writeCountLimit > 0 && fw.writes >= fw.writeCountLimit:
+		fw.flushLocked()
+	case fw.buffered > 0:
 		fw.armLocked()
 	}
 	return n, err
@@ -79,6 +95,7 @@ func (fw *flushWriter) armLocked() {
 func (fw *flushWriter) flushLocked() {
 	fw.f.Flush()
 	fw.buffered = 0
+	fw.writes = 0
 	if fw.timer != nil {
 		fw.timer.Stop()
 		fw.timer = nil
