@@ -7,31 +7,32 @@ import (
 	"time"
 )
 
-// StreamEager sets r.Streaming = true and r.StreamingThreshold = 1
+// StreamEager sets r.StreamingThreshold = 1
 //
-// See [Body.Streaming] for more info
+// See [Body.StreamingThreshold] for more info
 func (r Body) StreamEager() Body {
-	r.Streaming = true
 	r.StreamingThreshold = 1
 	return r
 }
 
-// StreamThreshold sets r.Streaming = true and r.StreamingThreshold = threshold
+// StreamThreshold sets r.StreamingThreshold = threshold
 //
 // See [Body.StreamingThreshold] for more info
 func (r Body) StreamThreshold(threshold int) Body {
-	r.Streaming = true
 	r.StreamingThreshold = threshold
 	return r
 }
 
-// StreamInterval sets r.Streaming = true and r.StreamInterval = interval
+// StreamInterval sets r.StreamInterval = interval
 //
 // See [Body.StreamingInterval] for more info
 func (r Body) StreamInterval(interval time.Duration) Body {
-	r.Streaming = true
 	r.StreamingInterval = interval
 	return r
+}
+
+func (r Body) isStreaming() bool {
+	return r.StreamingThreshold > 0 || r.StreamingInterval > 0
 }
 
 type flushWriter struct {

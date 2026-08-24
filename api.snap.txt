@@ -30,7 +30,6 @@ func (a Adapter) AdaptFunc(next func(w ResponseWriter, r *http.Request) Body) ht
 type Body struct {
 	Data any
 	TemplateName string
-	Streaming bool
 	StreamingThreshold int
 	StreamingInterval time.Duration
 

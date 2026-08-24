@@ -32,7 +32,7 @@ type Config struct {
 	//
 	// rsvp logs two events:
 	//  - Error: error while writing HTTP response
-	//  - Warning: Body.Stream() was ignored because the provided http.ResponseWriter was not an http.Flusher
+	//  - Warning: Streaming was ignored because the provided http.ResponseWriter was not an http.Flusher
 	Logger *slog.Logger
 }
 

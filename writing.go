@@ -108,7 +108,7 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 	w.writer.WriteHeader(status)
 	out := io.Writer(w.writer)
 	var fw *flushWriter
-	if res.Streaming {
+	if res.isStreaming() {
 		if f, ok := w.writer.(http.Flusher); ok {
 			fw = &flushWriter{
 				w:         w.writer,
