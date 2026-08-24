@@ -7,11 +7,12 @@ import (
 	"time"
 )
 
-// StreamEager sets r.Streaming = true
+// StreamEager sets r.Streaming = true and r.StreamingThreshold = 1
 //
 // See [Body.Streaming] for more info
 func (r Body) StreamEager() Body {
 	r.Streaming = true
+	r.StreamingThreshold = 1
 	return r
 }
 
@@ -52,7 +53,7 @@ func (fw *flushWriter) Write(p []byte) (int, error) {
 	if err != nil {
 		return n, err
 	}
-	if fw.buffered >= fw.threshold {
+	if fw.threshold > 0 && fw.buffered >= fw.threshold {
 		fw.flushLocked()
 	} else if fw.buffered > 0 {
 		fw.armLocked()
