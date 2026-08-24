@@ -16,6 +16,8 @@
 // as REST and progressive enhancement.
 package rsvp
 
+import "time"
+
 // Body represents the content body of an HTTP response.
 //
 // By default, it represents a 200 OK response. The Body.Status* methods (e.g. [Body.StatusFound]) may be used to set a non-200 status.
@@ -33,6 +35,24 @@ type Body struct {
 	// It is not an error if a template is not found for one of the two templates; other formats will be attempted.
 	TemplateName string
 	// TODO: Perhaps a warning should be issued to stderr if this fails to match on both templates?
+
+	// StreamingThreshold sets the required number of bytes buffered before flushing to the client.
+	//
+	// Depending on your use case, [Body.StreamThreshold] may be a more convient way to set this flag.
+	StreamingThreshold int
+
+	// StreamingInterval sets a duration that the writer will wait between flushes, provided there are bytes to flush.
+	//
+	// Depending on your use case, [Body.StreamInterval] may be a more convient way to set this flag.
+	StreamingInterval time.Duration
+
+	// StreamingWriteCount sets the number of Write() calls required before flushing
+	// to the client. Useful for line/record-oriented formats (CSV rows, JSONL lines)
+	// where each record is emitted via a single Write call, so flushing by record
+	// count is more meaningful than flushing by byte count.
+	//
+	// Depending on your use case, [Body.StreamWriteCount] may be a more convenient way to set this flag.
+	StreamingWriteCount int
 
 	statusCode int
 

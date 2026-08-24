@@ -1,0 +1,113 @@
+package rsvp
+
+import (
+	"io"
+	"net/http"
+	"sync"
+	"time"
+)
+
+// StreamEager sets r.StreamingThreshold = 1
+//
+// See [Body.StreamingThreshold] for more info
+func (r Body) StreamEager() Body {
+	r.StreamingThreshold = 1
+	return r
+}
+
+// StreamThreshold sets r.StreamingThreshold = threshold
+//
+// See [Body.StreamingThreshold] for more info
+func (r Body) StreamThreshold(threshold int) Body {
+	r.StreamingThreshold = threshold
+	return r
+}
+
+// StreamInterval sets r.StreamInterval = interval
+//
+// See [Body.StreamingInterval] for more info
+func (r Body) StreamInterval(interval time.Duration) Body {
+	r.StreamingInterval = interval
+	return r
+}
+
+// StreamWriteCount sets r.StreamingWriteCount = count
+//
+// See [Body.StreamingWriteCount] for more info
+func (r Body) StreamWriteCount(count int) Body {
+	r.StreamingWriteCount = count
+	return r
+}
+
+func (r Body) isStreaming() bool {
+	return r.StreamingThreshold > 0 || r.StreamingInterval > 0 || r.StreamingWriteCount > 0
+}
+
+type flushWriter struct {
+	mu              sync.Mutex
+	w               io.Writer
+	f               http.Flusher
+	threshold       int
+	writeCountLimit int
+	interval        time.Duration
+	buffered        int
+	writes          int
+	timer           *time.Timer
+	closed          bool
+}
+
+func (fw *flushWriter) Write(p []byte) (int, error) {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+	n, err := fw.w.Write(p)
+	fw.buffered += n
+	if n > 0 {
+		fw.writes++
+	}
+	if err != nil {
+		return n, err
+	}
+	switch {
+	case fw.threshold > 0 && fw.buffered >= fw.threshold:
+		fw.flushLocked()
+	case fw.writeCountLimit > 0 && fw.writes >= fw.writeCountLimit:
+		fw.flushLocked()
+	case fw.buffered > 0:
+		fw.armLocked()
+	}
+	return n, err
+}
+
+func (fw *flushWriter) armLocked() {
+	if fw.interval <= 0 || fw.closed || fw.timer != nil {
+		return
+	}
+	fw.timer = time.AfterFunc(fw.interval, func() {
+		fw.mu.Lock()
+		defer fw.mu.Unlock()
+		fw.timer = nil
+		if fw.buffered > 0 && !fw.closed {
+			fw.flushLocked()
+		}
+	})
+}
+
+func (fw *flushWriter) flushLocked() {
+	fw.f.Flush()
+	fw.buffered = 0
+	fw.writes = 0
+	if fw.timer != nil {
+		fw.timer.Stop()
+		fw.timer = nil
+	}
+}
+
+func (fw *flushWriter) close() {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+	fw.closed = true
+	if fw.timer != nil {
+		fw.timer.Stop()
+		fw.timer = nil
+	}
+}

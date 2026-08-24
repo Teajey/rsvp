@@ -30,6 +30,9 @@ func (a Adapter) AdaptFunc(next func(w ResponseWriter, r *http.Request) Body) ht
 type Body struct {
 	Data any
 	TemplateName string
+	StreamingThreshold int
+	StreamingInterval time.Duration
+	StreamingWriteCount int
 
 	// Has unexported fields.
 }
@@ -38,7 +41,7 @@ func Blank() Body
 
 func Data(data any) Body
 
-func (res *Body) MediaTypes(cfg Config) iter.Seq[string]
+func (res Body) MediaTypes(cfg Config) iter.Seq[string]
 
 func (r Body) StatusAccepted() Body
 
@@ -84,6 +87,14 @@ func (r Body) StatusUnauthorized() Body
 
 func (r Body) StatusUnprocessableEntity() Body
 
+func (r Body) StreamEager() Body
+
+func (r Body) StreamInterval(interval time.Duration) Body
+
+func (r Body) StreamThreshold(threshold int) Body
+
+func (r Body) StreamWriteCount(count int) Body
+
 type Config struct {
 	HtmlTemplate *html.Template
 	TextTemplate *text.Template
@@ -91,6 +102,7 @@ type Config struct {
 	JsonIndent string
 	XmlPrefix string
 	XmlIndent string
+	Logger *slog.Logger
 }
 
 type Csv interface {

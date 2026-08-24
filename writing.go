@@ -31,7 +31,7 @@ type ResponseWriter interface {
 
 // Write the result of handler to w. May write headers to w.Header().
 //
-// NOTE: This function is for advanced lower-level use cases.
+// This function is for advanced lower-level use cases.
 func Write(w http.ResponseWriter, r *http.Request, cfg Config, handler Handler) error {
 	rw := responseWriter{
 		writer: w,
@@ -56,6 +56,8 @@ func (w *responseWriter) Header() http.Header {
 // Write the [Body] to the [http.ResponseWriter] with the given [Config].
 func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err error) {
 	w.writer.Header().Add("Vary", "Accept")
+
+	logger := cfg.getLogger()
 
 	dev.Log("config: %#v", cfg)
 	status := cmp.Or(res.statusCode, 200)
@@ -104,7 +106,24 @@ func (w *responseWriter) write(res *Body, r *http.Request, cfg Config) (err erro
 	}
 
 	w.writer.WriteHeader(status)
-	err = render(res, mediaType, w.writer, cfg)
+	out := io.Writer(w.writer)
+	var fw *flushWriter
+	if res.isStreaming() {
+		if f, ok := w.writer.(http.Flusher); ok {
+			fw = &flushWriter{
+				w:               w.writer,
+				f:               f,
+				threshold:       res.StreamingThreshold,
+				interval:        res.StreamingInterval,
+				writeCountLimit: res.StreamingWriteCount,
+			}
+			out = fw
+			defer fw.close()
+		} else {
+			logger.Warn("Streaming requested but the underlying http.ResponseWriter is not http.Flusher; ignoring")
+		}
+	}
+	err = render(res, mediaType, out, cfg)
 	return
 }
 

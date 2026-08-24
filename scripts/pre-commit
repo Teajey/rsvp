@@ -11,3 +11,10 @@ if [[ $? -ne 0 ]]; then
   echo "There are unstaged changes to $APISNAP"
   exit 1
 fi
+
+go test ./...
+
+if [[ $? -ne 0 ]]; then
+  echo "Unit test run failed"
+  exit 1
+fi

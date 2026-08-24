@@ -1,7 +1,6 @@
 package rsvp
 
 import (
-	"log"
 	"net/http"
 )
 
@@ -17,10 +16,11 @@ type Adapter struct {
 }
 
 func (a Adapter) AdaptFunc(next func(w ResponseWriter, r *http.Request) Body) http.HandlerFunc {
+	logger := a.config.getLogger()
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		err := Write(rw, r, a.config, HandlerFunc(next))
 		if err != nil {
-			log.Printf("rsvp failed to write a response: %s", err)
+			logger.Error("rsvp failed to write a response", "error", err)
 			return
 		}
 	})
